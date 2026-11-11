@@ -25,6 +25,7 @@ abstract class TestCase extends AddonTestCase
     {
         // Every render is a new page: reset the once-per-request flags.
         request()->attributes->remove('statamic-consent.assets');
+        request()->attributes->remove('statamic-consent.assets-pending');
         request()->attributes->remove('statamic-consent.gates');
 
         // Rendered as a template file like a site's layout (Antlers::parse()

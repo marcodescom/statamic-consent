@@ -253,7 +253,8 @@ class TagsTest extends TestCase
 
         $this->assertStringContainsString('data-consent-gate-load', $html);
         $this->assertStringNotContainsString('data-consent-gate-allow', $html);
-        $this->assertStringContainsString('consent.js', $html, 'the gate brings the script itself');
+        $this->assertStringNotContainsString('consent.js', $html, 'never inside the page: in <head>, see AssetsTest');
+        $this->assertStringContainsString('<!--statamic-consent:assets-->', $html);
     }
 
     #[Test]

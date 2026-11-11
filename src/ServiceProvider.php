@@ -2,6 +2,7 @@
 
 namespace Marcodes\Consent;
 
+use Marcodes\Consent\Http\Middleware\InjectAssets;
 use Marcodes\Consent\Tags\Consent;
 use Statamic\Providers\AddonServiceProvider;
 
@@ -9,6 +10,14 @@ class ServiceProvider extends AddonServiceProvider
 {
     protected $tags = [
         Consent::class,
+    ];
+
+    // Appended after Statamic's static cache middleware, so it runs first on
+    // the way out and the cached page already has the assets in <head>.
+    protected $middlewareGroups = [
+        'statamic.web' => [
+            InjectAssets::class,
+        ],
     ];
 
     /*

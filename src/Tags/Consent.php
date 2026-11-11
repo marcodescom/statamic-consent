@@ -3,6 +3,7 @@
 namespace Marcodes\Consent\Tags;
 
 use Illuminate\Support\Facades\Vite;
+use Marcodes\Consent\Support\Assets;
 use Marcodes\Consent\Support\Embeds;
 use Marcodes\Consent\Support\Settings;
 use Statamic\Facades\Site;
@@ -19,8 +20,6 @@ class Consent extends Tags
 {
     protected static $handle = 'consent';
 
-    private const ASSETS_FLAG = 'statamic-consent.assets';
-
     private const GATE_COUNTER = 'statamic-consent.gates';
 
     public function head(): string
@@ -28,7 +27,8 @@ class Consent extends Tags
         $settings = Settings::fromConfig();
 
         if (! $settings->active()) {
-            return '';
+            // Nothing to ask, but a gate in the page template needs the script.
+            return Assets::pending() ? Assets::once($settings) : '';
         }
 
         $html = '';
@@ -42,7 +42,7 @@ class Consent extends Tags
                 .'</script>'."\n";
         }
 
-        return $html.$this->assets($settings);
+        return $html.Assets::once($settings);
     }
 
     public function banner(): string
@@ -67,7 +67,7 @@ class Consent extends Tags
             't' => fn (string $key, array $replace = []) => $this->trans($key, $replace),
         ])->render();
 
-        return $html.$this->assets($settings);
+        return $html.Assets::once($settings);
     }
 
     public function settingsLink(): string
@@ -205,7 +205,8 @@ class Consent extends Tags
             't' => fn (string $key, array $replace = []) => $this->trans($key, $replace),
         ])->render();
 
-        return $html.$this->assets($settings);
+        // Never the tags themselves: they belong in <head>, see Assets.
+        return $html.Assets::defer($settings);
     }
 
     private function iframe(string $src, string $title, array $attributes = []): string
@@ -217,28 +218,6 @@ class Consent extends Tags
         }
 
         return $html.' allowfullscreen></iframe>';
-    }
-
-    /**
-     * Stylesheet and script, once per request. The script is a module: browsers
-     * run a module URL only once, even if it appears twice in a page.
-     */
-    private function assets(Settings $settings): string
-    {
-        if (! $settings->assetsEnabled()) {
-            return '';
-        }
-
-        if (request()->attributes->get(self::ASSETS_FLAG)) {
-            return '';
-        }
-
-        request()->attributes->set(self::ASSETS_FLAG, true);
-
-        return view('statamic-consent::assets', [
-            'css' => $settings->assetUrl('consent.css'),
-            'js' => $settings->assetUrl('consent.js'),
-        ])->render();
     }
 
     /**

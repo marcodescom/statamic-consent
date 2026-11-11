@@ -68,7 +68,7 @@ php artisan vendor:publish --tag=statamic-consent-config
 </body>
 ```
 
-`{{ consent:head }}` adds the stylesheet, the Consent Mode defaults (inline, only with a measurement id) and the script (`<script type="module">`, so it never runs twice). Without it, `{{ consent:banner }}` and the gates add stylesheet and script themselves. All three tags render nothing when there is nothing to ask (no valid measurement id and media disabled).
+`{{ consent:head }}` adds the stylesheet, the Consent Mode defaults (inline, only with a measurement id) and the script (`<script type="module">`, so it never runs twice). Gates never print stylesheet or script inside the page, also when they sit in the page template, which Statamic renders before the layout: they leave an HTML comment as a marker, `{{ consent:head }}` prints the assets, and a middleware in the `statamic.web` group removes the markers before the static cache stores the page. Without `{{ consent:head }}`, `{{ consent:banner }}` prints the assets, and on a page with gates but neither tag the middleware inserts them before `</head>`. No inline code is added for this, so strict CSP setups with `{{ consent:head defaults="false" }}` keep working. Banner and settings link render nothing when there is nothing to ask (no valid measurement id and media disabled); `{{ consent:head }}` then only prints the assets for gates on the page.
 
 ## Tags
 
@@ -236,6 +236,10 @@ vendor/bin/phpunit # Orchestra Testbench + Statamic AddonTestCase
 ## Changelog
 
 ### Unreleased
+
+- Gates never print stylesheet and script inside the page: `{{ consent:head }}` prints them in `<head>`, also for gates in the page template; a middleware removes the markers or, without consent tags in the layout, inserts the assets before `</head>`.
+
+### 1.1.3 and earlier
 
 - Short banner text built from parts; details moved to the settings view.
 - Three buttons in the first view: "Alle akzeptieren", "Alle ablehnen", "Einstellungen" (outline).
