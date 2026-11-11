@@ -156,7 +156,14 @@
     background: var(--_consent-category-bg);
 }
 
-.consent-banner__checkbox {
+/* Beats form resets such as @tailwindcss/forms ([type="checkbox"] and its :focus ring). */
+.consent-banner input.consent-banner__checkbox {
+    -webkit-appearance: auto;
+    appearance: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
     width: 18px;
     height: 18px;
     margin: 2px 0 0;
