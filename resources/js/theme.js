@@ -19,7 +19,9 @@
  *               otherwise its text colour; too faint accents fall back to the text colour
  *   radius      border radius of that element (card radius capped at 16px)
  *   button text black or white, whichever contrasts more with the accent (WCAG AA)
- * Muted text, borders, hover and gate colours are mixed in CSS from these.
+ *   muted text  text colour mixed towards the background, but never below WCAG AA
+ *               (4.5:1) on the background, the category boxes and the gate boxes
+ * Borders, hover and gate colours are mixed in CSS from these.
  */
 
 export const DEFAULT_ACCENT_SELECTOR = '.btn-primary, .button-primary, .btn, .button, button[type="submit"], main a, a'
@@ -92,6 +94,32 @@ export function readableText(background) {
     const dark = parseColor(DARK)
     const light = parseColor(LIGHT)
     return contrast(background, dark) >= contrast(background, light) ? DARK : LIGHT
+}
+
+/** Like CSS color-mix(in srgb, a weight, b). */
+export function mix(a, b, weight) {
+    const channel = (key) => Math.round(a[key] * weight + b[key] * (1 - weight))
+    return { r: channel('r'), g: channel('g'), b: channel('b'), a: 1 }
+}
+
+const MIN_TEXT_CONTRAST = 4.6 // WCAG AA is 4.5:1, a little headroom for rounding.
+const BOX_TINT = 0.06 // --consent-category-bg and --consent-gate-bg: 6 % text colour.
+
+/**
+ * Muted text: as light as 75 % text colour, darker where that would fall
+ * below AA on the background or on the tinted boxes; the text colour itself
+ * (or black or white) at worst.
+ */
+export function mutedText(fg, bg) {
+    const box = mix(fg, bg, BOX_TINT)
+    const readable = (color) => contrast(color, bg) >= MIN_TEXT_CONTRAST && contrast(color, box) >= MIN_TEXT_CONTRAST
+    for (let weight = 0.75; weight < 1; weight += 0.05) {
+        const color = mix(fg, bg, weight)
+        if (readable(color)) {
+            return color
+        }
+    }
+    return readable(fg) ? fg : parseColor(readableText(bg))
 }
 
 const visible = (element, win) => {
@@ -189,7 +217,7 @@ export function dominantBackground(doc, win) {
     const blocks = []
     const elements = Array.from(doc.body.querySelectorAll('*')).slice(0, MAX_SECTION_SCAN * 10)
     for (const element of elements) {
-        if (blocks.length >= MAX_SECTION_SCAN || element.closest('[data-consent], .consent-backdrop, [hidden]')) {
+        if (blocks.length >= MAX_SECTION_SCAN || element.closest('[data-consent], [data-consent-gate], .consent-backdrop, [hidden]')) {
             continue
         }
         const rect = element.getBoundingClientRect()
@@ -251,6 +279,7 @@ export function computeTheme(doc, win, selector = DEFAULT_ACCENT_SELECTOR) {
     const theme = {
         '--consent-bg': toCss(bg),
         '--consent-fg': toCss(fg),
+        '--consent-muted': toCss(mutedText(fg, bg)),
     }
 
     let accent = null
@@ -291,6 +320,7 @@ const DEPENDS_ON = {
     '--consent-button-fg': ['--consent-button-bg'],
     '--consent-focus': ['--consent-button-bg'],
     '--consent-button-radius': ['--consent-radius'],
+    '--consent-muted': ['--consent-fg', '--consent-bg'],
 }
 
 /** True when the site defines this --consent-* property itself. */

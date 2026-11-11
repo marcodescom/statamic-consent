@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { applyTheme, computeTheme, contrast, parseColor, readableText } from '../../resources/js/theme.js'
+import { applyTheme, computeTheme, contrast, dominantBackground, mix, mutedText, parseColor, readableText } from '../../resources/js/theme.js'
 import { bannerHtml, reset, setup } from './helpers.js'
 
 const site = (css, body = '') => {
@@ -37,6 +37,38 @@ describe('colour helpers', () => {
     })
 })
 
+describe('muted text', () => {
+    it('stays at or above WCAG AA on the background and on the tinted boxes', () => {
+        const pairs = [
+            ['#0a0a0a', '#ffffff'], // defaults
+            ['#1e293b', '#f4f7fb'], // light demo
+            ['#ededed', '#141414'], // dark demo
+            ['#555555', '#ffffff'], // grey body text: 75 % would be 3.9:1
+            ['#767676', '#ffffff'], // body text just at AA
+            ['#9ca3af', '#111827'],
+        ]
+        for (const [fgHex, bgHex] of pairs) {
+            const fg = parseColor(fgHex)
+            const bg = parseColor(bgHex)
+            const muted = mutedText(fg, bg)
+            expect(contrast(muted, bg), `${fgHex} on ${bgHex}`).toBeGreaterThanOrEqual(4.5)
+            expect(contrast(muted, mix(fg, bg, 0.06)), `${fgHex} on box of ${bgHex}`).toBeGreaterThanOrEqual(4.5)
+        }
+    })
+
+    it('is still lighter than the text where there is room', () => {
+        const fg = parseColor('#0a0a0a')
+        const bg = parseColor('#ffffff')
+        expect(contrast(mutedText(fg, bg), bg)).toBeLessThan(contrast(fg, bg))
+    })
+
+    it('is not written when the site sets its own text or background colour', () => {
+        document.head.insertAdjacentHTML('beforeend', '<style>:root { --consent-fg: #333333; } body { color: rgb(85, 85, 85); background: #fff; }</style>')
+        const written = applyTheme(document, window)
+        expect(written['--consent-auto-muted']).toBeUndefined()
+    })
+})
+
 describe('auto theme', () => {
     it('takes background and text from the body and the accent from a primary button', () => {
         site('body { background-color: rgb(17, 17, 17); color: rgb(240, 240, 240); } .btn-primary { background-color: rgb(243, 149, 43); color: rgb(0, 0, 0); border-top-left-radius: 6px; }',
@@ -45,6 +77,7 @@ describe('auto theme', () => {
         expect(computeTheme(document, window)).toEqual({
             '--consent-bg': 'rgb(17 17 17)',
             '--consent-fg': 'rgb(240 240 240)',
+            '--consent-muted': 'rgb(184 184 184)',
             '--consent-button-bg': 'rgb(243 149 43)',
             '--consent-button-fg': '#0a0a0a',
             '--consent-focus': 'rgb(243 149 43)',
@@ -139,5 +172,25 @@ describe('auto theme', () => {
         site('.brand { background-color: rgb(120, 0, 120); } .btn { background-color: rgb(0, 0, 200); }')
         setup('<button class="btn">A</button><span class="brand">B</span>' + bannerHtml({ accentSelector: '.brand' }))
         expect(autoVars()['--consent-auto-button-bg']).toBe('rgb(120 0 120)')
+    })
+})
+
+describe('dominant background', () => {
+    it('does not count consent gates as page sections (phones: gates are almost full width)', () => {
+        site('body { background-color: rgb(20, 20, 20); } .section { background-color: rgb(20, 20, 20); } .consent-gate { background-color: rgb(240, 240, 240); }',
+            '<div class="section">Hero</div><div class="consent-gate" data-consent-gate="youtube">Gate</div><div class="consent-gate" data-consent-gate="vimeo">Gate</div>')
+        const sizes = { section: 120, 'consent-gate': 400 }
+        Object.defineProperty(document.documentElement, 'clientWidth', { configurable: true, value: 390 })
+        const rects = Array.from(document.body.querySelectorAll('div')).map((element) => {
+            const original = element.getBoundingClientRect
+            element.getBoundingClientRect = () => ({ width: 360, height: sizes[element.className] })
+            return [element, original]
+        })
+        try {
+            expect(dominantBackground(document, window)).toMatchObject({ r: 20, g: 20, b: 20 })
+        } finally {
+            delete document.documentElement.clientWidth
+            rects.forEach(([element]) => delete element.getBoundingClientRect)
+        }
     })
 })
