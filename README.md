@@ -237,7 +237,7 @@ vendor/bin/phpunit # Orchestra Testbench + Statamic AddonTestCase
 
 ## Changelog
 
-### Unreleased
+### 1.1.4
 
 - Settings view as a modal dialog with backdrop in every position (centred from 600px, bottom sheet on phones), with its own scroll area.
 - Texts at least 15px, regular weight; muted text at least WCAG AA, also in the auto theme.
