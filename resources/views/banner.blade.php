@@ -4,6 +4,9 @@
     The HTML is the same for every visitor (static caching): it starts hidden and
     consent.js shows it when no valid choice is stored. "Alle akzeptieren" and
     "Alle ablehnen" look exactly the same; "Einstellungen" is an outline button.
+    The settings view opens as a dialog over a dimmed page (bottom sheet on phones).
+    Every category: name, then the checkbox (or the "Immer aktiv" badge for the
+    necessary one), the description below.
     Override: php artisan vendor:publish --tag=statamic-consent-views
 --}}
 <section
@@ -49,9 +52,9 @@
             <form class="consent-banner__settings" id="consent-settings" data-consent-form hidden>
                 <fieldset class="consent-banner__fieldset">
                     <legend class="consent-banner__legend">{{ $t('banner.categories_legend') }}</legend>
-                    <div class="consent-banner__category">
-                        <input type="checkbox" id="consent-necessary" class="consent-banner__checkbox" checked disabled aria-describedby="consent-necessary-description">
-                        <label for="consent-necessary" class="consent-banner__label">{{ $t('banner.necessary_label') }}</label>
+                    <div class="consent-banner__category consent-banner__category--fixed">
+                        <span class="consent-banner__label">{{ $t('banner.necessary_label') }}</span>
+                        <span class="consent-banner__badge">{{ $t('banner.always_active') }}</span>
                         <p id="consent-necessary-description" class="consent-banner__description">{{ $t('banner.necessary_description') }}</p>
                     </div>
 @foreach ($categories as $category)

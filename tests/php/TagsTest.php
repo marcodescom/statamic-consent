@@ -86,12 +86,26 @@ class TagsTest extends TestCase
         $html = $this->antlers('{{ consent:banner }}');
 
         $this->assertStringContainsString('data-consent-categories="statistics,media"', $html);
-        $this->assertMatchesRegularExpression('/<input type="checkbox" id="consent-necessary"[^>]*checked disabled/', $html);
+        $this->assertStringNotContainsString('id="consent-necessary"', $html, 'no greyed-out checkbox for the necessary category');
+        $this->assertStringNotContainsString('disabled', $this->settingsView($html));
+        $this->assertMatchesRegularExpression('#<span class="consent-banner__label">Necessary</span>\s*<span class="consent-banner__badge">Always active</span>#', $html);
         $this->assertStringContainsString('name="statistics"', $html);
         $this->assertStringContainsString('name="media"', $html);
         $this->assertStringContainsString('data-consent-customize', $html);
         $this->assertStringContainsString('data-consent-save', $html);
         $this->assertStringContainsString('We use Google Analytics for statistics and load videos and maps from YouTube and Google Maps only with your consent.', $html);
+    }
+
+    #[Test]
+    public function the_necessary_category_shows_an_always_active_badge_in_german(): void
+    {
+        $this->withAnalytics();
+        $this->useLanguage('de');
+
+        $view = $this->settingsView($this->antlers('{{ consent:banner }}'));
+
+        $this->assertMatchesRegularExpression('#<span class="consent-banner__label">Notwendig</span>\s*<span class="consent-banner__badge">Immer aktiv</span>#', $view);
+        $this->assertStringContainsString('Speichert Ihre Auswahl in diesem Browser. Immer aktiv.', $view, 'description unchanged');
     }
 
     #[Test]
@@ -244,6 +258,53 @@ class TagsTest extends TestCase
         $this->assertStringContainsString('Beim Laden werden Daten wie Ihre IP-Adresse an YouTube (Google) übertragen, auch in die USA.', $html);
         $this->assertStringContainsString('style="--consent-gate-ratio: 16 / 9"', $html);
         $this->assertStringContainsString('href="/privacy"', $html);
+        $this->assertStringContainsString('consent-gate--video', $html);
+        $this->assertStringContainsString('consent-gate__icon--play', $html);
+        $this->assertMatchesRegularExpression('#<span class="consent-gate__title">Imagefilm</span>\s*<span class="consent-gate__provider">Video von YouTube</span>#', $html);
+        $this->assertMatchesRegularExpression('#<button type="button" class="consent-gate__button" data-consent-gate-load[^>]*>Einmal laden</button>#', $html, 'primary: filled');
+        $this->assertMatchesRegularExpression('#<button type="button" class="consent-gate__button consent-gate__button--outline" data-consent-gate-allow[^>]*>Immer erlauben</button>#', $html, 'secondary: outline');
+    }
+
+    #[Test]
+    public function a_video_gate_without_a_title_names_only_the_provider(): void
+    {
+        $this->useLanguage('de');
+
+        $html = $this->antlers('{{ consent:vimeo id="76979871" }}');
+
+        $this->assertStringNotContainsString('consent-gate__title', $html);
+        $this->assertStringContainsString('<span class="consent-gate__provider">Video von Vimeo</span>', $html);
+        $this->assertStringContainsString('title="Vimeo-Video"', $html, 'iframe title unchanged');
+
+        $this->useLanguage('en');
+        $this->assertStringContainsString('<span class="consent-gate__provider">Video from Vimeo</span>', $this->antlers('{{ consent:vimeo id="76979871" }}'));
+    }
+
+    #[Test]
+    public function a_map_gate_shows_a_pin_a_heading_and_the_optional_address(): void
+    {
+        $this->useLanguage('de');
+
+        $html = $this->antlers('{{ consent:map src="https://www.google.com/maps/embed?pb=!1m18" address="Schloßstraße 19, 82031 Grünwald" title="Google Maps: Firmensitz" }}');
+        $this->assertStringContainsString('consent-gate--map', $html);
+        $this->assertStringContainsString('<svg class="consent-gate__icon"', $html);
+        $this->assertStringContainsString('<span class="consent-gate__provider">Karte von Google Maps</span>', $html);
+        $this->assertStringContainsString('<span class="consent-gate__address">Schloßstraße 19, 82031 Grünwald</span>', $html);
+        $this->assertStringNotContainsString('consent-gate__title', $html, 'the iframe title stays an iframe title');
+        $this->assertStringContainsString('src="https://www.google.com/maps/embed?pb=!1m18"', $html, 'src wins, the address is only shown');
+
+        $html = $this->antlers('{{ consent:map query="Marienplatz 1, München" }}');
+        $this->assertStringNotContainsString('consent-gate__address', $html, 'a query is not shown');
+    }
+
+    #[Test]
+    public function the_gate_heading_escapes_title_and_address(): void
+    {
+        $html = $this->antlers('{{ consent:youtube id="dQw4w9WgXcQ" title="<b>x</b>" }}{{ consent:map address="<i>y</i>" }}');
+
+        $this->assertStringNotContainsString('<b>x</b>', $this->withoutTemplates($html));
+        $this->assertStringNotContainsString('<i>y</i>', $this->withoutTemplates($html));
+        $this->assertStringContainsString('&lt;b&gt;x&lt;/b&gt;', $html);
     }
 
     #[Test]
@@ -319,6 +380,8 @@ class TagsTest extends TestCase
         $html = $this->antlers('{{ consent:gate service="calendly" provider="Calendly" }}<iframe src="https://calendly.com/x"></iframe></template><iframe src="https://evil.test"></iframe>{{ /consent:gate }}');
 
         $this->assertStringContainsString('Beim Laden werden Daten wie Ihre IP-Adresse an Calendly übertragen.', $this->antlersDe($html));
+        $this->assertStringContainsString('Inhalt von Calendly', $this->antlersDe($html));
+        $this->assertStringContainsString('consent-gate--embed', $html);
         $this->assertSame(1, substr_count($html, '</template>'));
         $this->assertStringNotContainsString('<iframe', $this->withoutTemplates($html));
 

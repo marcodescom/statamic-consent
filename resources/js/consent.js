@@ -26,7 +26,8 @@
  * Events on document: "consent:ready" (after init) and "consent:change"
  * (after every decision), detail = { version, decidedAt, asked, statistics, media }.
  * Position (data-consent-position): bottom-left (default), bottom-center,
- * bottom-right, bar, or center (a modal with backdrop and focus trap).
+ * bottom-right, bar, or center (a modal with backdrop and focus trap). The
+ * settings view is modal in every position (data-consent-settings on the banner).
  * Theme (data-consent-theme): "auto" takes colours from the site, see theme.js.
  *
  * API: window.Consent.has(category), .get(), .set({ statistics, media }),
@@ -447,6 +448,7 @@ export function loadGate(gate, { autoplay = false, focus = false } = {}) {
         return false
     }
     const doc = gate.ownerDocument
+    keepHeight(gate)
     const frame = doc.createElement('div')
     frame.className = 'consent-gate__frame'
     frame.setAttribute('data-consent-gate-frame', '')
@@ -477,6 +479,26 @@ export function loadGate(gate, { autoplay = false, focus = false } = {}) {
     return true
 }
 
+/**
+ * A box with a fixed ratio grows when the placeholder needs more room (narrow
+ * phones). Keeps that height for the loaded embed, so the page does not jump.
+ */
+export function keepHeight(gate) {
+    if (! gate.classList.contains('consent-gate--ratio') || typeof gate.getBoundingClientRect !== 'function') {
+        return
+    }
+    const { width, height } = gate.getBoundingClientRect()
+    const view = gate.ownerDocument.defaultView
+    const match = String(view?.getComputedStyle(gate).aspectRatio || '').match(/([\d.]+)\s*\/\s*([\d.]+)/)
+    if (! width || ! height || ! match || ! Number(match[1])) {
+        return
+    }
+    const natural = width * Number(match[2]) / Number(match[1])
+    if (height > natural + 1) {
+        gate.style.minHeight = `${Math.round(height)}px`
+    }
+}
+
 /** Removes the loaded content and shows the placeholder again. */
 export function unloadGate(gate) {
     if (! isGateLoaded(gate)) {
@@ -484,6 +506,7 @@ export function unloadGate(gate) {
     }
     gate.querySelectorAll('[data-consent-gate-frame]').forEach((frame) => frame.remove())
     gate.removeAttribute('data-consent-gate-loaded')
+    gate.style.minHeight = ''
     const placeholder = gate.querySelector('[data-consent-gate-placeholder]')
     if (placeholder) {
         placeholder.hidden = false
@@ -563,10 +586,27 @@ export function initConsent(doc = document, win = window, { now = () => Date.now
 
     /* Banner -------------------------------------------------------- */
 
+    // The settings view is a modal dialog in every position: backdrop, focus trap.
+    let settingsOpen = false
+    const isModal = () => modal || settingsOpen
+
+    const syncModal = () => {
+        if (! banner) {
+            return
+        }
+        banner.toggleAttribute('data-consent-settings', settingsOpen)
+        banner.setAttribute('aria-modal', String(isModal()))
+        if (backdrop) {
+            backdrop.hidden = banner.hidden || ! isModal()
+        }
+    }
+
     const showSettings = (show) => {
         if (! form) {
             return
         }
+        settingsOpen = show
+        syncModal()
         form.hidden = ! show
         const customize = button('customize')
         const save = button('save')
@@ -587,11 +627,11 @@ export function initConsent(doc = document, win = window, { now = () => Date.now
         }
     }
 
-    // The centred dialog is modal: a backdrop covers the page (it can still
-    // scroll, nothing is locked) and the focus stays inside the dialog.
+    // The centred dialog and the settings view are modal: a backdrop covers the
+    // page (it can still scroll, nothing is locked) and the focus stays inside.
     let backdrop = null
-    if (banner && modal) {
-        banner.setAttribute('aria-modal', 'true')
+    if (banner) {
+        banner.setAttribute('aria-modal', String(modal))
         backdrop = doc.createElement('div')
         backdrop.className = 'consent-backdrop'
         backdrop.hidden = true
@@ -601,7 +641,7 @@ export function initConsent(doc = document, win = window, { now = () => Date.now
 
     // Focus that leaves the modal dialog (click on the page, screen reader) is pulled back.
     const onFocusIn = (event) => {
-        if (banner && ! banner.hidden && ! banner.contains(event.target)) {
+        if (banner && ! banner.hidden && isModal() && ! banner.contains(event.target)) {
             banner.focus()
         }
     }
@@ -615,9 +655,8 @@ export function initConsent(doc = document, win = window, { now = () => Date.now
         }
         const hadFocus = banner.contains(doc.activeElement)
         banner.hidden = true
-        if (backdrop) {
-            backdrop.hidden = true
-        }
+        settingsOpen = false
+        syncModal()
         if (hadFocus && opener && doc.contains(opener)) {
             opener.focus()
         }
@@ -628,15 +667,13 @@ export function initConsent(doc = document, win = window, { now = () => Date.now
         if (! banner || ! categories.length) {
             return
         }
-        opener = trigger || (modal ? doc.activeElement : null)
+        opener = trigger || (modal || settings ? doc.activeElement : null)
         banner.hidden = false
-        if (backdrop) {
-            backdrop.hidden = false
-        }
         showSettings(settings)
+        syncModal()
         // Opened on purpose (footer link) or modal: focus moves into the banner.
         // Non-modal banner on page load: no focus jump, it is early in the tab order.
-        if (trigger || modal) {
+        if (trigger || isModal()) {
             banner.focus()
         }
     }
@@ -674,7 +711,7 @@ export function initConsent(doc = document, win = window, { now = () => Date.now
                 hide()
                 return
             }
-            if (event.key === 'Tab' && modal) {
+            if (event.key === 'Tab' && isModal()) {
                 const items = focusables()
                 if (! items.length) {
                     return
@@ -691,9 +728,7 @@ export function initConsent(doc = document, win = window, { now = () => Date.now
                 }
             }
         })
-        if (modal) {
-            doc.addEventListener('focusin', onFocusIn)
-        }
+        doc.addEventListener('focusin', onFocusIn)
     }
 
     const isOpenLink = (element) => {

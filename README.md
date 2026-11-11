@@ -79,11 +79,13 @@ php artisan vendor:publish --tag=statamic-consent-config
 | `{{ consent:settings_link }}` | Button "Cookie-Einstellungen" that reopens the banner. Params: `class`, `text`. |
 | `{{ consent:youtube id="..." }}` | YouTube gate on youtube-nocookie.com. `id` or `url` (watch, youtu.be, embed, shorts), `title`, `start` (seconds or `1m30s`). |
 | `{{ consent:vimeo id="..." }}` | Vimeo gate with Do Not Track. `id` or `url`, `hash` (unlisted videos), `title`, `start`. |
-| `{{ consent:map src="..." }}` | Google Maps gate for an embed URL (`https://www.google.com/maps/embed?pb=...`). |
-| `{{ consent:map address="..." }}` | Google Maps gate for an address or query (`query` works too), `zoom` (1-21), `lang`. No API key needed. |
-| `{{ consent:gate service="..." }}...{{ /consent:gate }}` | Wraps any embed markup. The content is rendered into a `<template>` and only inserted after consent; scripts inside run then. `service`: `youtube`, `vimeo`, `google_maps` or your own handle with `provider="Name"`. |
+| `{{ consent:map src="..." }}` | Google Maps gate for an embed URL (`https://www.google.com/maps/embed?pb=...`). An `address` next to `src` is only shown on the placeholder. |
+| `{{ consent:map address="..." }}` | Google Maps gate for an address or query (`query` works too, but is not shown), `zoom` (1-21), `lang`. No API key needed. The address is shown under the heading. |
+| `{{ consent:gate service="..." }}...{{ /consent:gate }}` | Wraps any embed markup. The content is rendered into a `<template>` and only inserted after consent; scripts inside run then. `service`: `youtube`, `vimeo`, `google_maps` or your own handle with `provider="Name"`; `kind="video"` or `kind="map"` picks icon and heading for your own handle (default: "Inhalt von Name"). |
 
-Common gate params: `ratio` (`16/9` default, `4:3`, `auto` for content with its own height), `poster` (a site-hosted image URL, never a provider thumbnail), `poster_alt`, `text` (placeholder text), `class`, `autoplay="false"` (by default the clicked YouTube or Vimeo embed starts playing; embeds opened by "Immer erlauben" never autoplay).
+The placeholder shows an icon (play button for videos, pin for maps), a heading ("Video von YouTube", with the `title` above it when one is passed; "Karte von Google Maps" with the address), the transfer text with the privacy link, and the buttons: "Einmal laden" filled, "Immer erlauben" as outline. With a poster the picture stays visible: the play button sits on it, the texts on a scrim at the bottom. The box keeps its ratio; when the placeholder needs more room on a narrow phone the box grows and keeps that height for the loaded embed, so nothing jumps.
+
+Common gate params: `ratio` (`16/9` default, `4:3`, `auto` for content with its own height), `poster` (a site-hosted image URL, never a provider thumbnail), `poster_alt`, `title` (shown on video placeholders and used as iframe title), `text` (placeholder text), `class`, `autoplay="false"` (by default the clicked YouTube or Vimeo embed starts playing; embeds opened by "Immer erlauben" never autoplay).
 
 Other links can open the settings too: any element with `data-consent-open`, or a link ending with one of `open_hashes` (default `#consent-settings`), for example in the privacy policy text.
 
@@ -133,13 +135,13 @@ The markup can be overridden as well (`--tag=statamic-consent-views`, Blade view
 
 ## Theming
 
-Plain CSS with BEM classes (`.consent-banner__*`, `.consent-gate__*`, `.consent-settings-link`, `.consent-backdrop`) and `font: inherit`. Banner, backdrop and gates share one theme. Every colour is resolved in this order:
+Plain CSS with BEM classes (`.consent-banner__*`, `.consent-gate__*`, `.consent-settings-link`, `.consent-backdrop`) and `font: inherit`. Texts are at least 15px, regular weight. Banner, backdrop and gates share one theme. Every colour is resolved in this order:
 
 1. a `--consent-*` variable the site sets (always wins),
 2. the auto theme (`theme: auto`, default),
 3. the built-in default.
 
-**Auto theme.** At start the script reads the site's computed styles. The background is the one covering most of the page (full-width sections weighted by height, so dark sections on a light `<body>` count as dark), else the `<body>` background (walking up to the first non-transparent one, white if none). The text colour comes from `<body>`, or black or white when it does not contrast with that background. The accent colour is the site's call-to-action colour: the most colourful filled link or button, header first, including fills painted with `::before` or `::after`. Its radius becomes the button radius. When no button is colourful, or when the site sets its own `theme_accent_selector`, the first visible element matching `theme_accent_selector` is used (its background colour, or its text colour when the background is transparent; an accent too close to the page background falls back to the text colour). The button text becomes black or white, whichever contrasts more (always at least WCAG AA 4.5:1). Muted text, borders, hover, category boxes and gate boxes are mixed from background and text colour in CSS (`color-mix`). The values are written as `--consent-auto-*` on `<html>`, never for a variable the site sets itself (and the derived button text, focus colour and button radius are skipped when the site sets the button colour or radius).
+**Auto theme.** At start the script reads the site's computed styles. The background is the one covering most of the page (full-width sections weighted by height, so dark sections on a light `<body>` count as dark), else the `<body>` background (walking up to the first non-transparent one, white if none). The text colour comes from `<body>`, or black or white when it does not contrast with that background. The accent colour is the site's call-to-action colour: the most colourful filled link or button, header first, including fills painted with `::before` or `::after`. Its radius becomes the button radius. When no button is colourful, or when the site sets its own `theme_accent_selector`, the first visible element matching `theme_accent_selector` is used (its background colour, or its text colour when the background is transparent; an accent too close to the page background falls back to the text colour). The button text becomes black or white, whichever contrasts more (always at least WCAG AA 4.5:1). Muted text is the text colour mixed towards the background, but never below WCAG AA (4.5:1) on the background, the category boxes or the gate boxes. Borders, hover, category boxes and gate boxes are mixed from background and text colour in CSS (`color-mix`). Gates do not count as page sections when the background is measured. The values are written as `--consent-auto-*` on `<html>`, never for a variable the site sets itself (and the derived button text, focus colour and button radius are skipped when the site sets the button colour or radius).
 
 **Manual theme**, or overriding single values: set the variables, e.g. on `:root`:
 
@@ -147,7 +149,7 @@ Plain CSS with BEM classes (`.consent-banner__*`, `.consent-gate__*`, `.consent-
 :root {
     --consent-bg: #ffffff;
     --consent-fg: #0a0a0a;
-    --consent-muted: #404040;            /* default: mixed from fg and bg */
+    --consent-muted: #404040;            /* default: mixed from fg and bg, at least 4.5:1 (auto theme checks it) */
     --consent-border: #d4d4d4;           /* default: mixed from fg and bg */
     --consent-button-bg: #0a0a0a;        /* default: the text colour */
     --consent-button-fg: #ffffff;        /* default: the background colour */
@@ -170,7 +172,7 @@ Plain CSS with BEM classes (`.consent-banner__*`, `.consent-gate__*`, `.consent-
 }
 ```
 
-On phones (below 600px) the banner is a bottom sheet whose buttons stay visible while the text scrolls; `center` stays a centred dialog.
+On phones (below 600px) the banner is a bottom sheet whose buttons stay visible while the text scrolls; `center` stays a centred dialog. The settings view ("Einstellungen", the footer link) is a modal dialog in every position: dimmed page (`--consent-backdrop`), focus kept inside, from 600px centred and never taller than the screen with its own scroll area, on phones a bottom sheet of at most 85% height. The banner then carries `data-consent-settings`. The necessary category shows an "Immer aktiv" badge (`banner.always_active`) instead of a disabled checkbox; the privacy links get a taller tap area on phones.
 
 ## JavaScript API and events
 
@@ -237,6 +239,12 @@ vendor/bin/phpunit # Orchestra Testbench + Statamic AddonTestCase
 
 ### Unreleased
 
+- Settings view as a modal dialog with backdrop in every position (centred from 600px, bottom sheet on phones), with its own scroll area.
+- Texts at least 15px, regular weight; muted text at least WCAG AA, also in the auto theme.
+- "Immer aktiv" badge for the necessary category instead of a disabled checkbox (new text `banner.always_active`).
+- Gates: play or map icon, heading with provider (`gate.heading_video`, `heading_map`, `heading_embed`), title or address, filled and outline buttons, poster stays visible, no jump when loading; `kind` param for own services.
+- Larger tap area for the privacy links on phones.
+- Auto theme: gates no longer count as page sections (on phones a light gate could turn the banner of a dark site light).
 - Gates never print stylesheet and script inside the page: `{{ consent:head }}` prints them in `<head>`, also for gates in the page template; a middleware removes the markers or, without consent tags in the layout, inserts the assets before `</head>`.
 
 ### 1.1.3 and earlier

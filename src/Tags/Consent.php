@@ -185,12 +185,27 @@ class Consent extends Tags
         $number = (int) request()->attributes->get(self::GATE_COUNTER, 0) + 1;
         request()->attributes->set(self::GATE_COUNTER, $number);
 
+        $kind = match (true) {
+            in_array($service, ['youtube', 'vimeo'], true) => 'video',
+            $service === 'google_maps' => 'map',
+            default => in_array($this->params->get('kind'), ['video', 'map'], true) ? $this->params->get('kind') : 'embed',
+        };
+
+        // Shown on the placeholder: the title only when one is passed (videos and
+        // other embeds; a map shows its address instead).
+        $title = $kind !== 'map' && is_string($this->params->get('title')) ? trim($this->params->get('title')) : '';
+        $address = $kind === 'map' && is_string($this->params->get('address')) ? trim($this->params->get('address')) : '';
+
         $poster = $this->params->get('poster');
         $poster = is_string($poster) && preg_match('#^(/|https?://)#i', trim($poster)) ? trim($poster) : null;
 
         $html = view('statamic-consent::gate', [
             'id' => 'consent-gate-'.$number,
             'service' => $service,
+            'kind' => $kind,
+            'heading' => $this->trans("gate.heading_{$kind}", ['provider' => $provider]),
+            'title' => $title,
+            'address' => $address,
             'category' => 'media',
             'provider' => $provider,
             'text' => $text,

@@ -3,6 +3,8 @@ import {
     convertLegacy,
     cookieDomains,
     deleteAnalyticsCookies,
+    keepHeight,
+    loadGate,
     parseState,
     readOptions,
     withParam,
@@ -384,11 +386,55 @@ describe('banner interaction', () => {
 describe('positions', () => {
     const backdrop = () => document.querySelector('.consent-backdrop')
 
-    it('defaults to bottom-left, non-modal, without backdrop', () => {
+    it('defaults to bottom-left, non-modal, with the backdrop hidden', () => {
         setup(bannerHtml({ position: 'sideways' }))
         expect(window.Consent).toBeDefined()
-        expect(backdrop()).toBeNull()
+        expect(backdrop().hidden).toBe(true)
+        expect(banner().getAttribute('aria-modal')).toBe('false')
+        expect(banner().hasAttribute('data-consent-settings')).toBe(false)
         expect(document.activeElement).toBe(document.body)
+    })
+
+    it('the settings view is a modal dialog with backdrop in every position', () => {
+        for (const position of ['bottom-left', 'bottom-center', 'bottom-right', 'bar']) {
+            reset()
+            setup('<button id="page">Page</button>' + bannerHtml({ position }))
+            expect(backdrop().hidden, position).toBe(true)
+
+            click('[data-consent-customize]')
+            expect(banner().hasAttribute('data-consent-settings'), position).toBe(true)
+            expect(banner().getAttribute('aria-modal'), position).toBe('true')
+            expect(backdrop().hidden, position).toBe(false)
+            expect(banner().contains(document.activeElement), position).toBe(true)
+
+            // Focus that leaves the dialog is pulled back.
+            document.getElementById('page').focus()
+            expect(document.activeElement, position).toBe(banner())
+
+            click('[data-consent-save]')
+            expect(banner().hidden, position).toBe(true)
+            expect(backdrop().hidden, position).toBe(true)
+            expect(banner().hasAttribute('data-consent-settings'), position).toBe(false)
+            expect(banner().getAttribute('aria-modal'), position).toBe('false')
+        }
+    })
+
+    it('reopening from the footer shows the settings dialog with backdrop, Escape closes both', () => {
+        store(fresh())
+        setup(bannerHtml() + '<button type="button" data-consent-open id="open">Cookie-Einstellungen</button>')
+        click('#open')
+        expect(banner().hasAttribute('data-consent-settings')).toBe(true)
+        expect(backdrop().hidden).toBe(false)
+
+        banner().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+        expect(banner().hidden).toBe(true)
+        expect(backdrop().hidden).toBe(true)
+    })
+
+    it('a non-modal banner does not pull the focus back', () => {
+        setup('<button id="page">Page</button>' + bannerHtml())
+        document.getElementById('page').focus()
+        expect(document.activeElement.id).toBe('page')
     })
 
     it('center is a modal dialog with backdrop and focus inside', () => {
@@ -532,5 +578,47 @@ describe('gates', () => {
     it('adds the autoplay parameter before a URL fragment', () => {
         expect(withParam('https://player.vimeo.com/video/1?dnt=1#t=30s', 'autoplay=1')).toBe('https://player.vimeo.com/video/1?dnt=1&autoplay=1#t=30s')
         expect(withParam('https://x.test/embed', 'autoplay=1')).toBe('https://x.test/embed?autoplay=1')
+    })
+
+    describe('height of a ratio box that grew for its placeholder', () => {
+        const box = (height, ratio = '16 / 9') => {
+            document.body.innerHTML = gateHtml()
+            const gate = document.querySelector('[data-consent-gate]')
+            gate.classList.add('consent-gate--ratio')
+            gate.style.aspectRatio = ratio
+            gate.getBoundingClientRect = () => ({ width: 320, height })
+            return gate
+        }
+
+        it('keeps the taller height for the loaded embed and drops it when the placeholder returns', () => {
+            const gate = box(260)
+            loadGate(gate)
+            expect(gate.style.minHeight).toBe('260px')
+
+            window.Consent?.destroy?.()
+            const api = setup(bannerHtml())
+            document.body.appendChild(gate)
+            api.set({ statistics: false, media: true })
+            api.set({ statistics: false, media: false })
+            expect(gate.hasAttribute('data-consent-gate-loaded')).toBe(false)
+            expect(gate.style.minHeight).toBe('')
+        })
+
+        it('leaves a box in its ratio alone', () => {
+            const gate = box(180)
+            keepHeight(gate)
+            expect(gate.style.minHeight).toBe('')
+        })
+
+        it('leaves boxes without a ratio and unmeasured boxes alone', () => {
+            const gate = box(400)
+            gate.classList.remove('consent-gate--ratio')
+            keepHeight(gate)
+            expect(gate.style.minHeight).toBe('')
+
+            const unmeasured = box(0)
+            keepHeight(unmeasured)
+            expect(unmeasured.style.minHeight).toBe('')
+        })
     })
 })

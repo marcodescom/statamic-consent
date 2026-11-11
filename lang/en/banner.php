@@ -26,6 +26,7 @@ return [
     'settings_link' => 'Cookie settings',
     'categories_legend' => 'Categories',
     'necessary_label' => 'Necessary',
+    'always_active' => 'Always active',
     'necessary_description' => 'Stores your choice in this browser. Always active.',
     'statistics_label' => 'Statistics',
     'statistics_description' => 'Google Analytics by Google Ireland Limited: analysis of how the site is used, cookies "_ga" and "_ga_*". Data may be transferred to the USA.',

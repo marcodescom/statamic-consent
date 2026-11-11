@@ -64,29 +64,59 @@
     </nav>
 
     <!-- Gate: the iframe sits in <template> and is only inserted after consent. -->
-    <div class="consent-gate consent-gate--ratio" data-consent-gate="youtube" data-consent-gate-category="media" data-consent-gate-autoplay="autoplay=1" style="--consent-gate-ratio: 16 / 9">
+    <div class="consent-gate consent-gate--video consent-gate--ratio" data-consent-gate="youtube" data-consent-gate-category="media" data-consent-gate-autoplay="autoplay=1" style="--consent-gate-ratio: 16 / 9">
         <div class="consent-gate__placeholder" data-consent-gate-placeholder>
+            <svg class="consent-gate__icon consent-gate__icon--play" viewBox="0 0 64 64" width="64" height="64" aria-hidden="true" focusable="false"><circle cx="32" cy="32" r="32" class="consent-gate__icon-fill"/><path d="M26 20.5v23l18-11.5z" class="consent-gate__icon-mark"/></svg>
+            <p class="consent-gate__heading" id="gate-1-heading">
+                <span class="consent-gate__title">Imagefilm</span>
+                <span class="consent-gate__provider">Video von YouTube</span>
+            </p>
             <p class="consent-gate__text" id="gate-1-text">
                 Beim Laden werden Daten wie Ihre IP-Adresse an YouTube (Google) übertragen, auch in die USA.
                 <a href="/datenschutz" class="consent-gate__link">Datenschutzerklärung</a>
             </p>
             <div class="consent-gate__actions">
-                <button type="button" class="consent-gate__button" data-consent-gate-load aria-describedby="gate-1-text">Einmal laden</button>
-                <button type="button" class="consent-gate__button" data-consent-gate-allow aria-describedby="gate-1-text">Immer erlauben</button>
+                <button type="button" class="consent-gate__button" data-consent-gate-load aria-describedby="gate-1-heading gate-1-text">Einmal laden</button>
+                <button type="button" class="consent-gate__button consent-gate__button--outline" data-consent-gate-allow aria-describedby="gate-1-text">Immer erlauben</button>
             </div>
         </div>
         <template data-consent-gate-content><iframe src="https://www.youtube-nocookie.com/embed/aqz-KE-bpKQ?rel=0" title="YouTube-Video" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></template>
     </div>
 
-    <div class="consent-gate consent-gate--ratio" data-consent-gate="google_maps" data-consent-gate-category="media" style="--consent-gate-ratio: 4 / 3">
+    <!-- Vimeo with a site-hosted poster: the picture stays visible behind the texts. -->
+    <div class="consent-gate consent-gate--video consent-gate--ratio consent-gate--poster" data-consent-gate="vimeo" data-consent-gate-category="media" data-consent-gate-autoplay="autoplay=1" style="--consent-gate-ratio: 16 / 9">
+        <img class="consent-gate__poster" src="poster.svg" alt="" loading="lazy" decoding="async">
         <div class="consent-gate__placeholder" data-consent-gate-placeholder>
+            <svg class="consent-gate__icon consent-gate__icon--play" viewBox="0 0 64 64" width="64" height="64" aria-hidden="true" focusable="false"><circle cx="32" cy="32" r="32" class="consent-gate__icon-fill"/><path d="M26 20.5v23l18-11.5z" class="consent-gate__icon-mark"/></svg>
+            <p class="consent-gate__heading" id="gate-3-heading">
+                <span class="consent-gate__provider">Video von Vimeo</span>
+            </p>
+            <p class="consent-gate__text" id="gate-3-text">
+                Beim Laden werden Daten wie Ihre IP-Adresse an Vimeo übertragen, auch in die USA.
+                <a href="/datenschutz" class="consent-gate__link">Datenschutzerklärung</a>
+            </p>
+            <div class="consent-gate__actions">
+                <button type="button" class="consent-gate__button" data-consent-gate-load aria-describedby="gate-3-heading gate-3-text">Einmal laden</button>
+                <button type="button" class="consent-gate__button consent-gate__button--outline" data-consent-gate-allow aria-describedby="gate-3-text">Immer erlauben</button>
+            </div>
+        </div>
+        <template data-consent-gate-content><iframe src="https://player.vimeo.com/video/76979871?dnt=1" title="Vimeo-Video" loading="lazy" allow="autoplay; fullscreen; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></template>
+    </div>
+
+    <div class="consent-gate consent-gate--map consent-gate--ratio" data-consent-gate="google_maps" data-consent-gate-category="media" style="--consent-gate-ratio: 4 / 3">
+        <div class="consent-gate__placeholder" data-consent-gate-placeholder>
+            <svg class="consent-gate__icon" viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+            <p class="consent-gate__heading" id="gate-2-heading">
+                <span class="consent-gate__provider">Karte von Google Maps</span>
+                <span class="consent-gate__address">Marienplatz 1, 80331 München</span>
+            </p>
             <p class="consent-gate__text" id="gate-2-text">
                 Beim Laden werden Daten wie Ihre IP-Adresse an Google Maps (Google) übertragen, auch in die USA.
                 <a href="/datenschutz" class="consent-gate__link">Datenschutzerklärung</a>
             </p>
             <div class="consent-gate__actions">
-                <button type="button" class="consent-gate__button" data-consent-gate-load aria-describedby="gate-2-text">Einmal laden</button>
-                <button type="button" class="consent-gate__button" data-consent-gate-allow aria-describedby="gate-2-text">Immer erlauben</button>
+                <button type="button" class="consent-gate__button" data-consent-gate-load aria-describedby="gate-2-heading gate-2-text">Einmal laden</button>
+                <button type="button" class="consent-gate__button consent-gate__button--outline" data-consent-gate-allow aria-describedby="gate-2-text">Immer erlauben</button>
             </div>
         </div>
         <template data-consent-gate-content><iframe src="https://www.google.com/maps?q=Marienplatz+1%2C+M%C3%BCnchen&amp;output=embed" title="Karte von Google Maps" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></template>
@@ -128,15 +158,15 @@
         <div class="consent-banner__body">
         <h2 id="consent-title" class="consent-banner__title">Datenschutz-Einstellungen</h2>
         <p id="consent-text" class="consent-banner__text">
-            Wir nutzen Google Analytics für Statistiken und laden Videos und Karten von YouTube und Google Maps nur mit Ihrer Einwilligung. Dabei können Daten in die USA übermittelt werden. Ihre Wahl können Sie jederzeit unter „Cookie-Einstellungen“ ändern.
+            Wir nutzen Google Analytics für Statistiken und laden Videos und Karten von YouTube, Vimeo und Google Maps nur mit Ihrer Einwilligung. Dabei können Daten in die USA übermittelt werden. Ihre Wahl können Sie jederzeit unter „Cookie-Einstellungen“ ändern.
             <a href="/datenschutz" class="consent-banner__link">Mehr in der Datenschutzerklärung</a>.
         </p>
         <form class="consent-banner__settings" id="consent-settings" data-consent-form hidden>
             <fieldset class="consent-banner__fieldset">
                 <legend class="consent-banner__legend">Kategorien</legend>
-                <div class="consent-banner__category">
-                    <input type="checkbox" id="consent-necessary" class="consent-banner__checkbox" checked disabled aria-describedby="consent-necessary-description">
-                    <label for="consent-necessary" class="consent-banner__label">Notwendig</label>
+                <div class="consent-banner__category consent-banner__category--fixed">
+                    <span class="consent-banner__label">Notwendig</span>
+                    <span class="consent-banner__badge">Immer aktiv</span>
                     <p id="consent-necessary-description" class="consent-banner__description">Speichert Ihre Auswahl in diesem Browser. Immer aktiv.</p>
                 </div>
                 <div class="consent-banner__category">
@@ -147,7 +177,7 @@
                 <div class="consent-banner__category">
                     <input type="checkbox" id="consent-media" name="media" class="consent-banner__checkbox" aria-describedby="consent-media-description">
                     <label for="consent-media" class="consent-banner__label">Externe Medien</label>
-                    <p id="consent-media-description" class="consent-banner__description">Lädt eingebettete Inhalte von YouTube und Google Maps. Dabei wird unter anderem Ihre IP-Adresse an den Anbieter übertragen, auch in die USA.</p>
+                    <p id="consent-media-description" class="consent-banner__description">Lädt eingebettete Inhalte von YouTube, Vimeo und Google Maps. Dabei wird unter anderem Ihre IP-Adresse an den Anbieter übertragen, auch in die USA.</p>
                 </div>
             </fieldset>
         </form>
