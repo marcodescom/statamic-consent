@@ -14,6 +14,8 @@ Das Speichern Ihrer Auswahl ist nach § 25 Abs. 2 Nr. 2 TDDDG ohne Einwilligung 
 
 Ihre Auswahl können Sie jederzeit mit Wirkung für die Zukunft ändern oder widerrufen. Klicken Sie dazu am Ende jeder Seite auf „Cookie-Einstellungen“.
 
+Sollten wir künftig weitere Cookies oder vergleichbare Technologien einsetzen, passen wir diese Datenschutzerklärung an und holen, soweit erforderlich, vorher Ihre Einwilligung ein.
+
 ## Google Analytics
 
 Wenn Sie eingewilligt haben, nutzen wir auf dieser Website Google Analytics 4, einen Webanalysedienst der Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland („Google“). Ohne Ihre Einwilligung wird Google Analytics nicht geladen, und Ihr Browser baut keine Verbindung zu Google auf.
@@ -28,7 +30,7 @@ Wenn Sie eingewilligt haben, nutzen wir auf dieser Website Google Analytics 4, e
 
 **IP-Adresse:** Google Analytics 4 speichert keine IP-Adressen. Bei Zugriffen aus der EU verwendet Google Ihre IP-Adresse auf Servern in der EU nur kurz, um daraus den ungefähren Standort abzuleiten, und verwirft sie, bevor die Daten an Google Analytics weitergeleitet werden.
 
-**Cookies und Speicherdauer:** Google Analytics setzt die Cookies „_ga“ und „_ga_<Kennung>“. Sie bleiben bis zu zwei Jahre nach Ihrem letzten Besuch gespeichert. Die Daten zu einzelnen Besuchern und Ereignissen werden in Google Analytics nach [14] Monaten automatisch gelöscht. Zusammengefasste Berichte ohne Bezug zu einzelnen Besuchern können länger erhalten bleiben.
+**Cookies und Speicherdauer:** Google Analytics setzt die Cookies „_ga“ und „_ga_<Kennung>“. Sie bleiben bis zu zwei Jahre nach Ihrem letzten Besuch gespeichert. Die Daten zu einzelnen Besuchern und Ereignissen werden in Google Analytics nach 14 Monaten automatisch gelöscht. Zusammengefasste Berichte ohne Bezug zu einzelnen Besuchern können länger erhalten bleiben.
 
 **Rechtsgrundlage:** Das Speichern und Auslesen von Informationen auf Ihrem Gerät erfolgt auf Grundlage Ihrer Einwilligung nach § 25 Abs. 1 TDDDG, die weitere Verarbeitung Ihrer Daten auf Grundlage Ihrer Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO.
 

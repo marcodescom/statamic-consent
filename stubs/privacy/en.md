@@ -15,6 +15,8 @@ Storing your choice is permitted without consent under Section 25 (2) No. 2 TDDD
 
 You can change or withdraw your choice at any time with effect for the future. To do so, click "Cookie settings" at the bottom of any page.
 
+Should we use further cookies or similar technologies in the future, we will update this privacy policy and, where required, obtain your consent beforehand.
+
 ## Google Analytics
 
 If you have consented, we use Google Analytics 4 on this website, a web analytics service of Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Ireland ("Google"). Without your consent, Google Analytics is not loaded and your browser does not connect to Google.
@@ -29,7 +31,7 @@ If you have consented, we use Google Analytics 4 on this website, a web analytic
 
 **IP address:** Google Analytics 4 does not store IP addresses. For visits from the EU, Google uses your IP address on servers in the EU only briefly to derive the approximate location and discards it before the data is forwarded to Google Analytics.
 
-**Cookies and retention:** Google Analytics sets the cookies "_ga" and "_ga_<id>". They remain stored for up to two years after your last visit. Data on individual visitors and events is automatically deleted in Google Analytics after [14] months. Aggregated reports without reference to individual visitors may be kept longer.
+**Cookies and retention:** Google Analytics sets the cookies "_ga" and "_ga_<id>". They remain stored for up to two years after your last visit. Data on individual visitors and events is automatically deleted in Google Analytics after 14 months. Aggregated reports without reference to individual visitors may be kept longer.
 
 **Legal basis:** Storing and reading information on your device is based on your consent under Section 25 (1) TDDDG, the further processing of your data on your consent under Art. 6 (1) (a) GDPR.
 
