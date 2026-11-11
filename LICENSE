@@ -1,8 +1,5 @@
-LICENSE NOT DECIDED YET
-
-The license of marcodes/statamic-consent is an open decision of MARCODES GmbH.
-Options to decide before a public release (Statamic Marketplace, Packagist):
-an open source license (for example MIT) or a commercial license sold through
-the Statamic Marketplace.
-
-Until a license is chosen, all rights are reserved by MARCODES GmbH.
+Copyright (c) 2026 MARCODES GmbH. All rights reserved.
+This software is proprietary. The source code is published for transparency only.
+You may not use, copy, modify, merge, publish, distribute, sublicense or sell this software, in whole or in part, without a valid license from MARCODES GmbH.
+Licenses are granted by written agreement with MARCODES GmbH or, once available, by purchase through the Statamic Marketplace.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE.

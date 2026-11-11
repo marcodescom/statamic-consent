@@ -1,6 +1,6 @@
 # Consent for Statamic
 
-Cookie banner, Google Analytics 4 with Google Consent Mode v2 (strict opt-in) and two-click consent gates for YouTube, Vimeo and Google Maps. One Composer package, one Antlers tag in the layout, no build step in the site.
+Cookie banner, Google Analytics 4 with Google Consent Mode v2 (strict opt-in) and two-click consent gates for YouTube, Vimeo and Google Maps. One Composer package, one Antlers tag in the layout, no build step in the site. Proprietary software, a license from MARCODES GmbH is required (see [License](#license)).
 
 - **Strict opt-in.** Consent Mode defaults (everything denied, `ads_data_redaction`) are pushed first. `gtag.js` is not requested before the visitor accepts statistics.
 - **Categories.** `necessary` (always on), `statistics` (GA4), `media` (external media). The banner only lists the categories a site actually uses.
@@ -223,4 +223,4 @@ vendor/bin/phpunit # Orchestra Testbench + Statamic AddonTestCase
 
 ## License
 
-Not decided yet, see [LICENSE](LICENSE).
+Proprietary, see [LICENSE](LICENSE). The source code is published for transparency only. Using the addon requires a license from MARCODES GmbH, granted by written agreement or, once available, through the Statamic Marketplace.
