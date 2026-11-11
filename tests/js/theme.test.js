@@ -53,6 +53,26 @@ describe('auto theme', () => {
         })
     })
 
+    it('prefers the colourful call-to-action in the header over neutral buttons', () => {
+        site('.btn { background-color: rgb(10, 10, 10); color: #fff; } .cta { background-color: rgb(243, 149, 43); color: rgb(0, 0, 0); border-top-left-radius: 0px; }',
+            '<header><a href="/">Logo</a><a class="cta" href="/kontakt">Kontakt</a></header><main><button class="btn">Go</button></main>')
+        const theme = computeTheme(document, window)
+        expect(theme['--consent-button-bg']).toBe('rgb(243 149 43)')
+        expect(theme['--consent-button-fg']).toBe('#0a0a0a')
+        expect(theme['--consent-button-radius']).toBe('0px')
+    })
+
+    it('falls back to the accent selector when no button is colourful', () => {
+        site('.btn { background-color: rgb(20, 20, 20); }', '<header><a class="btn" href="/k">Kontakt</a></header>')
+        expect(computeTheme(document, window)['--consent-button-bg']).toBe('rgb(20 20 20)')
+    })
+
+    it('keeps a site-specific accent selector over the automatic search', () => {
+        site('.cta { background-color: rgb(243, 149, 43); } .mine { background-color: rgb(29, 78, 216); }',
+            '<header><a class="cta" href="/k">Kontakt</a></header><button class="mine">Go</button>')
+        expect(computeTheme(document, window, '.mine')['--consent-button-bg']).toBe('rgb(29 78 216)')
+    })
+
     it('caps the card radius for pill buttons', () => {
         site('.btn { background-color: rgb(29, 78, 216); border-top-left-radius: 999px; }', '<button class="btn">Go</button>')
         const theme = computeTheme(document, window)

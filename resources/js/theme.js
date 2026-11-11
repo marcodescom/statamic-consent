@@ -7,9 +7,14 @@
  * so a --consent-* variable set by the site always wins. Additionally no auto
  * value is written for a variable the site already defines.
  *
- *   background  first non-transparent background from <body> upwards, else white
- *   text        colour of <body>
- *   accent      first visible element matching the accent selector: its
+ *   background  the background covering most of the page (full-width sections),
+ *               else the first non-transparent background from <body> upwards, else white
+ *   text        colour of <body>, or black or white when it does not contrast with
+ *               that background (dark sections on a light <body>)
+ *   accent      the brand colour of the site's call-to-action buttons: the most
+ *               colourful filled link or button (header first, then the page; a fill
+ *               painted by ::before or ::after counts too). Without a colourful one
+ *               the first visible element matching the accent selector: its
  *               background if not transparent (and not the page background),
  *               otherwise its text colour; too faint accents fall back to the text colour
  *   radius      border radius of that element (card radius capped at 16px)
@@ -114,8 +119,119 @@ export function findAccentElement(doc, win, selector = DEFAULT_ACCENT_SELECTOR) 
     return null
 }
 
-/** Page background: first non-transparent background from <body> up to <html>. */
+const CTA_SELECTOR = 'a, button, [role="button"], input[type="submit"], input[type="button"]'
+const MIN_CHROMA = 0.25
+const MAX_CTA_CANDIDATES = 400
+
+/** Colourfulness 0-1 (max minus min channel). */
+export function chroma({ r, g, b }) {
+    return (Math.max(r, g, b) - Math.min(r, g, b)) / 255
+}
+
+/** Solid fill of an element: own background, else a ::before / ::after background. */
+export function elementFill(element, win, doc, pageBg) {
+    for (const pseudo of [null, '::before', '::after']) {
+        let style
+        try {
+            style = win.getComputedStyle(element, pseudo)
+        } catch (e) {
+            continue
+        }
+        if (pseudo && (style.content === 'none' || style.content === 'normal' || style.display === 'none')) {
+            continue
+        }
+        const color = parseColor(style.backgroundColor, doc)
+        if (color && color.a > 0.5 && (! pageBg || toCss(color) !== toCss(pageBg))) {
+            return color
+        }
+    }
+    return null
+}
+
+/**
+ * The site's call-to-action: the most colourful filled link or button, header
+ * first. Returns { element, color } or null when no fill is colourful enough.
+ */
+export function findBrandButton(doc, win, pageBg) {
+    const scopes = [doc.querySelector('header, [role="banner"]'), doc.body].filter(Boolean)
+    for (const scope of scopes) {
+        let best = null
+        const elements = Array.from(scope.querySelectorAll(CTA_SELECTOR)).slice(0, MAX_CTA_CANDIDATES)
+        for (const element of elements) {
+            if (! visible(element, win)) {
+                continue
+            }
+            const color = elementFill(element, win, doc, pageBg)
+            if (color && chroma(color) >= MIN_CHROMA && (! best || chroma(color) > chroma(best.color))) {
+                best = { element, color }
+            }
+        }
+        if (best) {
+            return best
+        }
+    }
+    return null
+}
+
+const MAX_SECTION_SCAN = 600
+
+/**
+ * Background that covers most of the page: full-width blocks (sections,
+ * header, footer) weighted by the height they show themselves. A dark site
+ * with a white <body> behind dark sections counts as dark. Null when nothing
+ * can be measured (no layout).
+ */
+export function dominantBackground(doc, win) {
+    const pageWidth = doc.documentElement.clientWidth || win.innerWidth || 0
+    if (! pageWidth || ! doc.body) {
+        return null
+    }
+    const blocks = []
+    const elements = Array.from(doc.body.querySelectorAll('*')).slice(0, MAX_SECTION_SCAN * 10)
+    for (const element of elements) {
+        if (blocks.length >= MAX_SECTION_SCAN || element.closest('[data-consent], .consent-backdrop, [hidden]')) {
+            continue
+        }
+        const rect = element.getBoundingClientRect()
+        if (rect.width < pageWidth * 0.9 || rect.height < 40) {
+            continue
+        }
+        const color = parseColor(win.getComputedStyle(element).backgroundColor, doc)
+        if (color && color.a > 0.9) {
+            blocks.push({ element, color, height: rect.height })
+        }
+    }
+    if (! blocks.length) {
+        return null
+    }
+    const weights = new Map()
+    let measured = 0
+    for (const block of blocks) {
+        // Height not covered by a nested full-width block with its own background.
+        const covered = blocks
+            .filter((other) => other !== block && block.element.contains(other.element)
+                && ! blocks.some((middle) => middle !== block && middle !== other && block.element.contains(middle.element) && middle.element.contains(other.element)))
+            .reduce((sum, other) => sum + other.height, 0)
+        const own = Math.max(0, block.height - covered)
+        const key = toCss(block.color)
+        weights.set(key, { color: block.color, weight: (weights.get(key)?.weight || 0) + own })
+        measured += own
+    }
+    const total = Math.max(doc.documentElement.scrollHeight || 0, measured)
+    const body = parseColor(win.getComputedStyle(doc.body).backgroundColor, doc)
+    if (body && body.a > 0) {
+        const key = toCss(body)
+        weights.set(key, { color: body, weight: (weights.get(key)?.weight || 0) + Math.max(0, total - measured) })
+    }
+    return Array.from(weights.values()).sort((a, b) => b.weight - a.weight)[0].color
+}
+
+/** Page background: the dominant section background, else the first non-transparent background from <body> up to <html>. */
 export function pageBackground(doc, win) {
+    const dominant = dominantBackground(doc, win)
+    if (dominant) {
+        return dominant
+    }
     for (let element = doc.body; element; element = element.parentElement) {
         const color = parseColor(win.getComputedStyle(element).backgroundColor, doc)
         if (color && color.a > 0) {
@@ -128,15 +244,22 @@ export function pageBackground(doc, win) {
 /** Computes the auto theme as { name: value } without touching the page. */
 export function computeTheme(doc, win, selector = DEFAULT_ACCENT_SELECTOR) {
     const bg = pageBackground(doc, win)
-    const fg = parseColor(win.getComputedStyle(doc.body).color, doc) || parseColor(luminance(bg) > 0.4 ? DARK : LIGHT)
+    let fg = parseColor(win.getComputedStyle(doc.body).color, doc)
+    if (! fg || contrast(fg, bg) < 4.5) {
+        fg = parseColor(readableText(bg))
+    }
     const theme = {
         '--consent-bg': toCss(bg),
         '--consent-fg': toCss(fg),
     }
 
     let accent = null
-    const element = findAccentElement(doc, win, selector)
-    if (element) {
+    // A site-specific accent selector wins over the automatic CTA search.
+    const brand = selector === DEFAULT_ACCENT_SELECTOR ? findBrandButton(doc, win, bg) : null
+    const element = brand ? brand.element : findAccentElement(doc, win, selector)
+    if (brand) {
+        accent = brand.color
+    } else if (element) {
         const style = win.getComputedStyle(element)
         const background = parseColor(style.backgroundColor, doc)
         const sameAsPage = background && toCss(background) === toCss(bg)
@@ -144,6 +267,9 @@ export function computeTheme(doc, win, selector = DEFAULT_ACCENT_SELECTOR) {
         if (accent && contrast(accent, bg) < MIN_ACCENT_CONTRAST) {
             accent = null
         }
+    }
+    if (element) {
+        const style = win.getComputedStyle(element)
         const radius = parseFloat(style.borderTopLeftRadius)
         if (Number.isFinite(radius) && radius >= 0) {
             theme['--consent-button-radius'] = `${radius}px`
