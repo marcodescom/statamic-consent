@@ -367,6 +367,72 @@ describe('banner interaction', () => {
     })
 })
 
+describe('positions', () => {
+    const backdrop = () => document.querySelector('.consent-backdrop')
+
+    it('defaults to bottom-left, non-modal, without backdrop', () => {
+        setup(bannerHtml({ position: 'sideways' }))
+        expect(window.Consent).toBeDefined()
+        expect(backdrop()).toBeNull()
+        expect(document.activeElement).toBe(document.body)
+    })
+
+    it('center is a modal dialog with backdrop and focus inside', () => {
+        setup('<button id="page">Page</button>' + bannerHtml({ position: 'center' }))
+        expect(banner().getAttribute('aria-modal')).toBe('true')
+        expect(backdrop().hidden).toBe(false)
+        expect(document.activeElement).toBe(banner())
+
+        click('[data-consent-reject]')
+        expect(banner().hidden).toBe(true)
+        expect(backdrop().hidden).toBe(true)
+    })
+
+    it('center traps the focus with Tab and Shift+Tab', () => {
+        setup('<button id="page">Page</button>' + bannerHtml({ position: 'center' }))
+        const buttons = Array.from(banner().querySelectorAll('a[href], button:not([hidden])'))
+        const first = buttons[0]
+        const last = buttons[buttons.length - 1]
+
+        last.focus()
+        banner().dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }))
+        expect(document.activeElement).toBe(first)
+
+        first.focus()
+        banner().dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+        expect(document.activeElement).toBe(last)
+
+        document.getElementById('page').focus()
+        expect(document.activeElement).toBe(banner())
+    })
+
+    it('center returns the focus to the footer link after closing', () => {
+        window.localStorage.setItem('consent', JSON.stringify(fresh()))
+        setup(bannerHtml({ position: 'center' }) + '<button type="button" data-consent-open id="open">Cookie-Einstellungen</button>')
+        const opener = document.getElementById('open')
+        opener.focus()
+        opener.click()
+        expect(backdrop().hidden).toBe(false)
+        banner().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+        expect(backdrop().hidden).toBe(true)
+        expect(document.activeElement).toBe(opener)
+    })
+})
+
+describe('buttons', () => {
+    it('shows accept, reject and settings in the first view, save only in the settings view', () => {
+        setup(bannerHtml({ categories: ['statistics'] }))
+        const visible = (name) => ! document.querySelector(`[data-consent-${name}]`).hidden
+        expect(['accept', 'reject', 'customize'].map(visible)).toEqual([true, true, true])
+        expect(visible('save')).toBe(false)
+
+        click('[data-consent-customize]')
+        expect(['accept', 'reject', 'save'].map(visible)).toEqual([true, true, true])
+        expect(visible('customize')).toBe(false)
+        expect(document.querySelector('[data-consent-form]').hidden).toBe(false)
+    })
+})
+
 describe('gates', () => {
     const iframes = () => document.querySelectorAll('iframe')
     const page = (gates = 2, options = {}) => bannerHtml(options) + Array.from({ length: gates }, () => gateHtml()).join('')

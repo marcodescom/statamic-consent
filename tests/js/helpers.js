@@ -12,16 +12,15 @@ export function bannerHtml({
     googleSignals = true,
     adPersonalization = false,
     cookieDomain = 'auto',
+    position = null,
+    theme = null,
+    accentSelector = null,
 } = {}) {
-    const settings = categories.length > 1
-        ? `<form data-consent-form hidden>
+    const settings = `<form data-consent-form hidden>
             <input type="checkbox" id="consent-necessary" checked disabled>
             ${categories.map((c) => `<input type="checkbox" id="consent-${c}" name="${c}">`).join('')}
           </form>`
-        : ''
-    const extra = categories.length > 1
-        ? '<button type="button" data-consent-customize aria-expanded="false">Einstellungen</button><button type="button" data-consent-save hidden>Auswahl speichern</button>'
-        : ''
+    const extra = '<button type="button" data-consent-customize aria-expanded="false">Einstellungen</button><button type="button" data-consent-save hidden>Auswahl speichern</button>'
 
     return `<section class="consent-banner" data-consent
         data-consent-version="${version}"
@@ -33,11 +32,15 @@ export function bannerHtml({
         data-consent-cookie-domain="${cookieDomain}"
         ${legacyKeys ? `data-consent-legacy-keys='${JSON.stringify(legacyKeys)}'` : ''}
         data-consent-open-hashes='["#consent-settings"]'
+        ${position ? `data-consent-position="${position}"` : ''}
+        ${theme ? `data-consent-theme="${theme}"` : ''}
+        ${accentSelector ? `data-consent-accent-selector="${accentSelector}"` : ''}
         role="dialog" aria-labelledby="consent-title" tabindex="-1" hidden>
         <h2 id="consent-title">Datenschutz-Einstellungen</h2>
         ${settings}
         <button type="button" data-consent-accept>Alle akzeptieren</button>
-        <button type="button" data-consent-reject>Nur notwendige</button>
+        <a href="/privacy" id="privacy">Datenschutz</a>
+        <button type="button" data-consent-reject>Alle ablehnen</button>
         ${extra}
     </section>`
 }

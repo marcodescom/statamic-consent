@@ -88,6 +88,24 @@ return [
     ],
 
     /*
+     * Where the banner appears from 600px width: "bottom-left", "bottom-center",
+     * "bottom-right", "bar" (full-width bottom bar) or "center" (modal dialog
+     * with a dimmed backdrop and focus trap). Below 600px every position except
+     * "center" becomes a full-width bottom sheet.
+     */
+    'position' => 'bottom-left',
+
+    /*
+     * "auto" takes background, text colour, font, accent colour and radius from
+     * the site (body and the first visible element matching
+     * theme_accent_selector). "manual" uses only the --consent-* variables and
+     * the defaults. In both modes --consent-* variables set by the site win.
+     */
+    'theme' => 'auto',
+
+    'theme_accent_selector' => '.btn-primary, .button-primary, .btn, .button, button[type="submit"], main a, a',
+
+    /*
      * Links whose href ends with one of these also open the settings, e.g. a
      * link in the privacy policy text: <a href="#consent-settings">.
      */

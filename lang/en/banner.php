@@ -3,16 +3,24 @@
 // Banner texts. Override in lang/vendor/statamic-consent/en/banner.php
 // (php artisan vendor:publish --tag=statamic-consent-translations) and keep
 // them in line with the privacy policy.
+//
+// The banner text is built from parts, so it fits the categories in use:
+// text_both / text_statistics / text_media + transfer + outro.
 return [
     'title' => 'Privacy settings',
-    'intro' => 'We use technically necessary storage so that this website works.',
-    'statistics' => 'With your consent, we use Google Analytics to see how our pages are used. Google sets cookies for this, and data may be transferred to the USA.',
-    'statistics_signals' => 'With your consent, we use Google Analytics with Google signals. This shows us how our pages are used and gives us aggregated information on age, gender and interests. If you are signed in to Google, Google can recognise your visits across devices. Google sets cookies for this, and data may be transferred to the USA.',
-    'media' => 'We only load content from :services with your consent. Data such as your IP address is then transferred to the provider, also to the USA.',
-    'outro' => 'Without consent, none of this is loaded. You can change your choice at any time via ":settings" at the bottom of the page.',
+    'text_both' => 'We use :statistics and load :media only with your consent.',
+    'text_statistics' => 'We use :statistics only with your consent.',
+    'text_media' => 'We load :media only with your consent.',
+    'statistics_part' => 'Google Analytics for statistics',
+    'media_part' => ':things from :services',
+    'things_videos' => 'videos',
+    'things_maps' => 'maps',
+    'things_videos_maps' => 'videos and maps',
+    'transfer' => 'Data may be transferred to the USA.',
+    'outro' => 'You can change your choice at any time under ":settings".',
     'privacy_link' => 'More in the privacy policy',
     'accept' => 'Accept all',
-    'reject' => 'Only necessary',
+    'reject' => 'Reject all',
     'customize' => 'Settings',
     'save' => 'Save selection',
     'settings_link' => 'Cookie settings',
@@ -21,6 +29,7 @@ return [
     'necessary_description' => 'Stores your choice in this browser. Always active.',
     'statistics_label' => 'Statistics',
     'statistics_description' => 'Google Analytics by Google Ireland Limited: analysis of how the site is used, cookies "_ga" and "_ga_*". Data may be transferred to the USA.',
+    'statistics_description_signals' => 'Google Analytics by Google Ireland Limited with Google signals: analysis of how the site is used, with aggregated information on age, gender and interests. If you are signed in to Google, Google can recognise your visits across devices. Cookies "_ga" and "_ga_*", data may be transferred to the USA.',
     'media_label' => 'External media',
     'media_description' => 'Loads embedded content from :services. Among other things, your IP address is transferred to the provider, also to the USA.',
     'and' => 'and',

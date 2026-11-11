@@ -35,7 +35,7 @@ If you have consented, we use Google Analytics 4 on this website, a web analytic
 
 **Data processing agreement and transfer to the USA:** We have concluded a data processing agreement with Google under Art. 28 GDPR for Google Analytics (Google Ads Data Processing Terms). [Variant A only:] Where Google links the data for Google signals to your Google account, this is governed by your settings in your Google account and by Google's privacy policy. A transfer of data to Google LLC in the USA cannot be ruled out. Google LLC is certified under the EU-US Data Privacy Framework, so there is an adequacy decision of the EU Commission for these transfers (Art. 45 GDPR). In addition, Google has agreed to the EU Commission's standard contractual clauses (Art. 46 (2) (c) GDPR).
 
-**Withdrawal:** You can withdraw your consent at any time with effect for the future. To do so, click "Cookie settings" at the bottom of any page and choose "Only necessary". Google Analytics is then no longer loaded, and the Google Analytics cookies of this website are deleted. The lawfulness of processing until withdrawal remains unaffected.
+**Withdrawal:** You can withdraw your consent at any time with effect for the future. To do so, click "Cookie settings" at the bottom of any page and choose "Reject all" or untick "Statistics" in the settings. Google Analytics is then no longer loaded, and the Google Analytics cookies of this website are deleted. The lawfulness of processing until withdrawal remains unaffected.
 
 For more information, see Google's privacy policy: [policies.google.com/privacy](https://policies.google.com/privacy).
 

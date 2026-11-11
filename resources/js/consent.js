@@ -25,11 +25,18 @@
  *
  * Events on document: "consent:ready" (after init) and "consent:change"
  * (after every decision), detail = { version, decidedAt, asked, statistics, media }.
+ * Position (data-consent-position): bottom-left (default), bottom-center,
+ * bottom-right, bar, or center (a modal with backdrop and focus trap).
+ * Theme (data-consent-theme): "auto" takes colours from the site, see theme.js.
+ *
  * API: window.Consent.has(category), .get(), .set({ statistics, media }),
  * .open(), .acceptAll(), .rejectAll(), .refresh()
  */
 
+import { applyTheme, DEFAULT_ACCENT_SELECTOR } from './theme.js'
+
 export const CATEGORIES = ['statistics', 'media']
+export const POSITIONS = ['bottom-left', 'bottom-center', 'bottom-right', 'center', 'bar']
 export const DEFAULT_STORAGE_KEY = 'consent'
 export const DEFAULT_MAX_AGE_DAYS = 365
 export const FUTURE_TOLERANCE_MS = 24 * 60 * 60 * 1000
@@ -102,6 +109,9 @@ export function readOptions(banner) {
         cookieDomain: data.consentCookieDomain || 'auto',
         legacyKeys: list(data.consentLegacyKeys),
         openHashes: list(data.consentOpenHashes),
+        position: POSITIONS.includes(data.consentPosition) ? data.consentPosition : 'bottom-left',
+        theme: data.consentTheme === 'manual' ? 'manual' : 'auto',
+        accentSelector: data.consentAccentSelector || DEFAULT_ACCENT_SELECTOR,
     }
 }
 
@@ -473,6 +483,15 @@ export function initConsent(doc = document, win = window, { now = () => Date.now
     const banner = doc.querySelector('[data-consent]')
     const options = readOptions(banner)
     const categories = banner ? options.categories : []
+    const modal = options.position === 'center'
+
+    if (options.theme === 'auto' && (banner || doc.querySelector('[data-consent-gate]'))) {
+        try {
+            applyTheme(doc, win, { selector: options.accentSelector, probe: banner || doc.querySelector('[data-consent-gate]') })
+        } catch (e) {
+            // Unreadable styles: the defaults of consent.css apply.
+        }
+    }
     const analytics = categories.includes('statistics') ? createAnalytics(doc, win, options) : null
 
     if (analytics) {
@@ -548,12 +567,37 @@ export function initConsent(doc = document, win = window, { now = () => Date.now
         }
     }
 
+    // The centred dialog is modal: a backdrop covers the page (it can still
+    // scroll, nothing is locked) and the focus stays inside the dialog.
+    let backdrop = null
+    if (banner && modal) {
+        banner.setAttribute('aria-modal', 'true')
+        backdrop = doc.createElement('div')
+        backdrop.className = 'consent-backdrop'
+        backdrop.hidden = true
+        backdrop.setAttribute('aria-hidden', 'true')
+        banner.parentNode.insertBefore(backdrop, banner)
+    }
+
+    // Focus that leaves the modal dialog (click on the page, screen reader) is pulled back.
+    const onFocusIn = (event) => {
+        if (banner && ! banner.hidden && ! banner.contains(event.target)) {
+            banner.focus()
+        }
+    }
+
+    const focusables = () => Array.from(banner.querySelectorAll('a[href], button, input:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+        .filter((element) => ! element.hidden && ! element.closest('[hidden]'))
+
     const hide = () => {
         if (! banner || banner.hidden) {
             return
         }
         const hadFocus = banner.contains(doc.activeElement)
         banner.hidden = true
+        if (backdrop) {
+            backdrop.hidden = true
+        }
         if (hadFocus && opener && doc.contains(opener)) {
             opener.focus()
         }
@@ -564,12 +608,15 @@ export function initConsent(doc = document, win = window, { now = () => Date.now
         if (! banner || ! categories.length) {
             return
         }
-        opener = trigger
+        opener = trigger || (modal ? doc.activeElement : null)
         banner.hidden = false
-        showSettings(settings && categories.length > 1)
-        // Opened on purpose (footer link): focus moves into the banner.
-        // Shown on page load: no focus jump, the banner is early in the tab order.
-        if (trigger) {
+        if (backdrop) {
+            backdrop.hidden = false
+        }
+        showSettings(settings)
+        // Opened on purpose (footer link) or modal: focus moves into the banner.
+        // Non-modal banner on page load: no focus jump, it is early in the tab order.
+        if (trigger || modal) {
             banner.focus()
         }
     }
@@ -605,8 +652,28 @@ export function initConsent(doc = document, win = window, { now = () => Date.now
             if (event.key === 'Escape' && decided()) {
                 event.preventDefault()
                 hide()
+                return
+            }
+            if (event.key === 'Tab' && modal) {
+                const items = focusables()
+                if (! items.length) {
+                    return
+                }
+                const first = items[0]
+                const last = items[items.length - 1]
+                const active = doc.activeElement
+                if (event.shiftKey && (active === first || active === banner)) {
+                    event.preventDefault()
+                    last.focus()
+                } else if (! event.shiftKey && active === last) {
+                    event.preventDefault()
+                    first.focus()
+                }
             }
         })
+        if (modal) {
+            doc.addEventListener('focusin', onFocusIn)
+        }
     }
 
     const isOpenLink = (element) => {
@@ -675,6 +742,8 @@ export function initConsent(doc = document, win = window, { now = () => Date.now
         refresh: () => syncGates(),
         destroy: () => {
             doc.removeEventListener('click', onClick)
+            doc.removeEventListener('focusin', onFocusIn)
+            backdrop?.remove()
             delete win.Consent
         },
     }

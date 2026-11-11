@@ -1,61 +1,49 @@
 /*
  * Consent banner and gates. Plain CSS, BEM classes, no framework needed.
- * Font and colours come from the site: set the --consent-* properties on
- * :root (or any ancestor) to match the site design.
  *
- * Fixed position: the banner overlays the page and never moves content (no
- * layout shift). "Accept all" and "Only necessary" look exactly the same
- * (no dark pattern).
+ * Colours: every value is resolved as
+ *     site variable (--consent-*)  >  auto theme (--consent-auto-*)  >  default
+ * The site themes the banner by setting --consent-* (e.g. on :root). With
+ * theme "auto", consent.js writes --consent-auto-* from the site's computed
+ * styles; a --consent-* variable of the site always wins. Muted text, borders,
+ * hover and gate colours are mixed from background and text colour unless the
+ * site sets them.
+ *
+ * The banner overlays the page and never moves content (no layout shift).
+ * "Accept all" and "Reject all" look exactly the same (no dark pattern).
  */
-:root {
-    --consent-bg: #ffffff;
-    --consent-fg: #0a0a0a;
-    --consent-muted: #404040;
-    --consent-border: #d4d4d4;
-    --consent-button-bg: #0a0a0a;
-    --consent-button-fg: #ffffff;
-    --consent-button-hover-bg: #262626;
-    --consent-focus: #2563eb;
-    --consent-radius: 0;
-    --consent-shadow: 0 12px 40px rgb(0 0 0 / 0.18);
-    --consent-z: 1000;
-    --consent-category-bg: #f5f5f5;
-    --consent-accent: var(--consent-button-bg);
-    --consent-gate-bg: #f5f5f5;
-    --consent-gate-fg: var(--consent-fg);
-    --consent-gate-muted: var(--consent-muted);
-    --consent-gate-border: var(--consent-border);
-    --consent-gate-overlay: rgb(255 255 255 / 0.88);
-    --consent-gate-radius: var(--consent-radius);
-    --consent-gate-ratio: 16 / 9;
+
+.consent-banner,
+.consent-backdrop,
+.consent-gate {
+    --_consent-bg: var(--consent-bg, var(--consent-auto-bg, #ffffff));
+    --_consent-fg: var(--consent-fg, var(--consent-auto-fg, #0a0a0a));
+    --_consent-muted: var(--consent-muted, color-mix(in srgb, var(--_consent-fg) 75%, var(--_consent-bg)));
+    --_consent-border: var(--consent-border, color-mix(in srgb, var(--_consent-fg) 20%, var(--_consent-bg)));
+    --_consent-button-bg: var(--consent-button-bg, var(--consent-auto-button-bg, var(--_consent-fg)));
+    --_consent-button-fg: var(--consent-button-fg, var(--consent-auto-button-fg, var(--_consent-bg)));
+    --_consent-button-hover-bg: var(--consent-button-hover-bg, color-mix(in srgb, var(--_consent-button-bg) 82%, var(--_consent-bg)));
+    --_consent-focus: var(--consent-focus, var(--consent-auto-focus, #2563eb));
+    --_consent-radius: var(--consent-radius, var(--consent-auto-radius, 0px));
+    --_consent-button-radius: var(--consent-button-radius, var(--consent-auto-button-radius, var(--_consent-radius)));
+    --_consent-shadow: var(--consent-shadow, 0 12px 40px rgb(0 0 0 / 0.18));
+    --_consent-z: var(--consent-z, 1000);
+    --_consent-category-bg: var(--consent-category-bg, color-mix(in srgb, var(--_consent-fg) 6%, var(--_consent-bg)));
+    --_consent-accent: var(--consent-accent, var(--_consent-button-bg));
+    --_consent-backdrop: var(--consent-backdrop, rgb(0 0 0 / 0.5));
+    --_consent-gate-bg: var(--consent-gate-bg, color-mix(in srgb, var(--_consent-fg) 6%, var(--_consent-bg)));
+    --_consent-gate-fg: var(--consent-gate-fg, var(--_consent-fg));
+    --_consent-gate-muted: var(--consent-gate-muted, var(--_consent-muted));
+    --_consent-gate-border: var(--consent-gate-border, var(--_consent-border));
+    --_consent-gate-overlay: var(--consent-gate-overlay, color-mix(in srgb, var(--_consent-bg) 88%, transparent));
+    --_consent-gate-radius: var(--consent-gate-radius, var(--_consent-radius));
 }
 
 .consent-banner[hidden],
 .consent-banner [hidden],
+.consent-backdrop[hidden],
 .consent-gate [hidden] {
     display: none !important;
-}
-
-/* Banner ------------------------------------------------------------- */
-
-.consent-banner {
-    position: fixed;
-    z-index: var(--consent-z);
-    inset: auto 0 0 0;
-    box-sizing: border-box;
-    max-height: 85vh;
-    max-height: 85dvh;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding: 16px 16px 0;
-    background: var(--consent-bg);
-    color: var(--consent-fg);
-    border-top: 1px solid var(--consent-border);
-    box-shadow: var(--consent-shadow);
-    font: inherit;
-    font-size: 14px;
-    line-height: 1.5;
-    text-align: left;
 }
 
 .consent-banner *,
@@ -63,13 +51,42 @@
     box-sizing: border-box;
 }
 
-.consent-banner:focus {
+/* Banner: bottom sheet (phones and the default for every position) ----- */
+
+.consent-banner {
+    position: fixed;
+    z-index: calc(var(--_consent-z) + 1);
+    inset: auto 0 0 0;
+    box-sizing: border-box;
+    max-height: 85vh;
+    max-height: 85dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 16px 16px 0;
+    background: var(--_consent-bg);
+    color: var(--_consent-fg);
+    border-top: 1px solid var(--_consent-border);
+    box-shadow: var(--_consent-shadow);
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: left;
+}
+
+/*
+ * The dialog itself only receives focus as a starting point (opened from the
+ * footer, or the modal on load); its buttons and links show the focus ring.
+ */
+.consent-banner:focus,
+.consent-banner:focus-visible {
     outline: none;
 }
 
-.consent-banner:focus-visible {
-    outline: 3px solid var(--consent-focus);
-    outline-offset: -3px;
+.consent-backdrop {
+    position: fixed;
+    z-index: var(--_consent-z);
+    inset: 0;
+    background: var(--_consent-backdrop);
 }
 
 .consent-banner__inner {
@@ -83,14 +100,14 @@
     font-size: 16px;
     font-weight: 700;
     line-height: 1.3;
-    color: var(--consent-fg);
+    color: var(--_consent-fg);
     letter-spacing: normal;
     text-transform: none;
 }
 
 .consent-banner__text {
     margin: 0;
-    color: var(--consent-muted);
+    color: var(--_consent-muted);
 }
 
 .consent-banner__link,
@@ -101,7 +118,7 @@
 }
 
 .consent-banner__link {
-    color: var(--consent-fg);
+    color: var(--_consent-fg);
 }
 
 .consent-banner__settings {
@@ -135,20 +152,20 @@
     column-gap: 10px;
     align-items: start;
     padding: 10px 12px;
-    border-radius: var(--consent-radius);
-    background: var(--consent-category-bg);
+    border-radius: var(--_consent-radius);
+    background: var(--_consent-category-bg);
 }
 
 .consent-banner__checkbox {
     width: 18px;
     height: 18px;
     margin: 2px 0 0;
-    accent-color: var(--consent-accent);
+    accent-color: var(--_consent-accent);
 }
 
 .consent-banner__label {
     font-weight: 600;
-    color: var(--consent-fg);
+    color: var(--_consent-fg);
     cursor: pointer;
 }
 
@@ -159,13 +176,14 @@
 .consent-banner__description {
     grid-column: 2;
     margin: 2px 0 0;
-    color: var(--consent-muted);
+    color: var(--_consent-muted);
     font-size: 0.93em;
 }
 
 /*
- * The buttons stay at the bottom of the banner while a long text scrolls
- * above them: both choices are always visible, also on small phones.
+ * Accept and reject side by side, settings (or save) below. The buttons stay
+ * at the bottom while a long text scrolls above them: every choice is always
+ * visible, also on small phones.
  */
 .consent-banner__actions {
     position: sticky;
@@ -174,7 +192,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 10px;
     padding: 14px 0 calc(16px + env(safe-area-inset-bottom, 0px));
-    background: var(--consent-bg);
+    background: var(--_consent-bg);
 }
 
 .consent-banner__button,
@@ -182,10 +200,10 @@
     min-height: 44px;
     margin: 0;
     padding: 10px 16px;
-    border: 1px solid var(--consent-button-bg);
-    border-radius: var(--consent-radius);
-    background: var(--consent-button-bg);
-    color: var(--consent-button-fg);
+    border: 1px solid var(--_consent-button-bg);
+    border-radius: var(--_consent-button-radius);
+    background: var(--_consent-button-bg);
+    color: var(--_consent-button-fg);
     font: inherit;
     font-size: inherit;
     font-weight: 600;
@@ -196,30 +214,21 @@
 
 .consent-banner__button:hover,
 .consent-gate__button:hover {
-    background: var(--consent-button-hover-bg);
-    border-color: var(--consent-button-hover-bg);
+    background: var(--_consent-button-hover-bg);
+    border-color: var(--_consent-button-hover-bg);
 }
 
-/* "Settings" is a quiet text button below the two equal choices. */
-.consent-banner__button--secondary {
+/* "Settings" and "Save selection": outline, below the two equal choices. */
+.consent-banner__button--outline {
     grid-column: 1 / -1;
-    min-height: 44px;
-    border-color: transparent;
+    border-color: var(--_consent-fg);
     background: transparent;
-    color: var(--consent-fg);
-    font-weight: 600;
-    text-decoration: underline;
-    text-underline-offset: 2px;
+    color: var(--_consent-fg);
 }
 
-.consent-banner__button--secondary:hover {
-    border-color: transparent;
-    background: transparent;
-    text-decoration-thickness: 2px;
-}
-
-.consent-banner__button--wide {
-    grid-column: 1 / -1;
+.consent-banner__button--outline:hover {
+    border-color: var(--_consent-fg);
+    background: var(--_consent-category-bg);
 }
 
 .consent-banner__link:focus-visible,
@@ -229,37 +238,113 @@
 .consent-gate__link:focus-visible,
 .consent-gate__button:focus-visible,
 .consent-gate__frame:focus-visible {
-    outline: 3px solid var(--consent-focus);
+    outline: 3px solid var(--_consent-focus, currentColor);
     outline-offset: 2px;
 }
 
-/* Very narrow screens: stack the buttons, each full width. */
 @media (max-width: 340px) {
     .consent-banner__actions {
         grid-template-columns: 1fr;
     }
 }
 
-/* Larger screens: a card in the lower left corner, the page stays usable. */
-@media (min-width: 768px) {
-    .consent-banner {
+/* Positions from 600px --------------------------------------------- */
+
+@media (min-width: 600px) {
+    .consent-banner:not([data-consent-position="bar"]):not([data-consent-position="center"]) {
         inset: auto auto 24px 24px;
         width: min(520px, calc(100vw - 48px));
         max-height: calc(100vh - 48px);
         max-height: calc(100dvh - 48px);
         padding: 24px 24px 0;
-        border: 1px solid var(--consent-border);
-        border-radius: var(--consent-radius);
+        border: 1px solid var(--_consent-border);
+        border-radius: var(--_consent-radius);
         font-size: 15px;
         line-height: 1.55;
     }
 
-    .consent-banner__inner {
+    .consent-banner[data-consent-position="bottom-center"] {
+        left: 0 !important;
+        right: 0 !important;
+        margin-inline: auto;
+    }
+
+    .consent-banner[data-consent-position="bottom-right"] {
+        left: auto !important;
+        right: 24px !important;
+    }
+
+    .consent-banner:not([data-consent-position="bar"]) .consent-banner__inner {
         max-width: none;
     }
 
-    .consent-banner__actions {
+    .consent-banner:not([data-consent-position="bar"]) .consent-banner__actions {
         padding-bottom: 24px;
+    }
+
+    .consent-banner[data-consent-position="bar"] {
+        padding: 20px 24px 0;
+        font-size: 15px;
+    }
+
+    .consent-banner[data-consent-position="bar"] .consent-banner__actions {
+        padding-bottom: 20px;
+    }
+}
+
+/* Bar on wide screens: text left, the three buttons in one row on the right. */
+@media (min-width: 960px) {
+    .consent-banner[data-consent-position="bar"] .consent-banner__inner {
+        display: flex;
+        align-items: flex-end;
+        gap: 32px;
+    }
+
+    .consent-banner[data-consent-position="bar"] .consent-banner__body {
+        flex: 1 1 auto;
+        padding-bottom: 20px;
+    }
+
+    .consent-banner[data-consent-position="bar"] .consent-banner__actions {
+        flex: 0 0 auto;
+        grid-template-columns: repeat(3, auto);
+    }
+
+    .consent-banner[data-consent-position="bar"] .consent-banner__button--outline {
+        grid-column: auto;
+    }
+}
+
+/* Center: a modal dialog in the middle of the screen at every width. */
+.consent-banner[data-consent-position="center"] {
+    inset: 0;
+    width: min(560px, calc(100vw - 32px));
+    height: fit-content;
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    margin: auto;
+    padding: 20px 20px 0;
+    border: 1px solid var(--_consent-border);
+    border-radius: var(--_consent-radius);
+}
+
+.consent-banner[data-consent-position="center"] .consent-banner__inner {
+    max-width: none;
+}
+
+.consent-banner[data-consent-position="center"] .consent-banner__actions {
+    padding-bottom: 20px;
+}
+
+@media (min-width: 600px) {
+    .consent-banner[data-consent-position="center"] {
+        padding: 28px 28px 0;
+        font-size: 15px;
+        line-height: 1.55;
+    }
+
+    .consent-banner[data-consent-position="center"] .consent-banner__actions {
+        padding-bottom: 28px;
     }
 }
 
@@ -282,9 +367,18 @@
         animation: consent-in 0.2s ease-out;
     }
 
+    .consent-backdrop {
+        animation: consent-fade 0.2s ease-out;
+    }
+
     @keyframes consent-in {
         from { opacity: 0; transform: translateY(8px); }
         to { opacity: 1; transform: none; }
+    }
+
+    @keyframes consent-fade {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
 }
 
@@ -301,17 +395,17 @@
     flex-direction: column;
     justify-content: center;
     width: 100%;
-    border: 1px solid var(--consent-gate-border);
-    border-radius: var(--consent-gate-radius);
-    background: var(--consent-gate-bg);
-    color: var(--consent-gate-fg);
+    border: 1px solid var(--_consent-gate-border);
+    border-radius: var(--_consent-gate-radius);
+    background: var(--_consent-gate-bg);
+    color: var(--_consent-gate-fg);
     font: inherit;
     font-size: 14px;
     line-height: 1.5;
 }
 
 .consent-gate--ratio {
-    aspect-ratio: var(--consent-gate-ratio);
+    aspect-ratio: var(--consent-gate-ratio, 16 / 9);
 }
 
 .consent-gate:not(.consent-gate--ratio) {
@@ -340,14 +434,14 @@
 
 .consent-gate--poster .consent-gate__placeholder {
     margin: 16px;
-    border-radius: var(--consent-gate-radius);
-    background: var(--consent-gate-overlay);
+    border-radius: var(--_consent-gate-radius);
+    background: var(--_consent-gate-overlay);
 }
 
 .consent-gate__text {
     max-width: 60ch;
     margin: 0;
-    color: var(--consent-gate-muted);
+    color: var(--_consent-gate-muted);
 }
 
 .consent-gate__actions {
@@ -396,7 +490,7 @@
     border: 0;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 600px) {
     .consent-gate {
         font-size: 15px;
     }

@@ -37,11 +37,13 @@ class TagsTest extends TestCase
         $this->assertStringContainsString('data-consent-categories="statistics"', $html);
         $this->assertStringContainsString('data-consent-version="1"', $html);
         $this->assertMatchesRegularExpression('/role="dialog"[\s\S]*aria-labelledby="consent-title"[\s\S]*hidden\s*>/', $html, 'starts hidden, JavaScript shows it');
-        $this->assertStringContainsString('Alle akzeptieren', $html);
-        $this->assertStringContainsString('Nur notwendige', $html);
-        $this->assertStringContainsString('Google Analytics mit Google-Signalen', $html);
+        $this->assertStringContainsString('>Alle akzeptieren</button>', $html);
+        $this->assertStringContainsString('>Alle ablehnen</button>', $html);
+        $this->assertMatchesRegularExpression('/consent-banner__button--outline" data-consent-customize[^>]*>Einstellungen<\/button>/', $html);
+        $this->assertStringContainsString('Wir nutzen Google Analytics für Statistiken nur mit Ihrer Einwilligung. Dabei können Daten in die USA übermittelt werden. Ihre Wahl können Sie jederzeit unter „Cookie-Einstellungen“ ändern.', $html);
+        $this->assertStringContainsString('mit Google-Signalen', $this->settingsView($html), 'signals details only in the settings view');
+        $this->assertStringNotContainsString('Alter, Geschlecht', $this->bannerText($html));
         $this->assertStringNotContainsString('Externe Medien', $html);
-        $this->assertStringNotContainsString('data-consent-customize', $html, 'one category: accept and reject are enough');
         $this->assertStringContainsString('href="/privacy"', $html);
     }
 
@@ -69,7 +71,7 @@ class TagsTest extends TestCase
 
         $this->assertStringContainsString('data-consent-categories="media"', $html);
         $this->assertStringNotContainsString('data-consent-ga-id', $html);
-        $this->assertStringContainsString('YouTube, Vimeo und Google Maps', $html);
+        $this->assertStringContainsString('Wir laden Videos und Karten von YouTube, Vimeo und Google Maps nur mit Ihrer Einwilligung. Dabei können Daten in die USA übermittelt werden.', $html);
         $this->assertStringNotContainsString('Google Analytics', $html);
         $this->assertMatchesRegularExpression('/<button[^>]*data-consent-open[^>]*>Cookie-Einstellungen<\/button>/', $html);
     }
@@ -89,7 +91,76 @@ class TagsTest extends TestCase
         $this->assertStringContainsString('name="media"', $html);
         $this->assertStringContainsString('data-consent-customize', $html);
         $this->assertStringContainsString('data-consent-save', $html);
-        $this->assertStringContainsString('YouTube and Google Maps', $html);
+        $this->assertStringContainsString('We use Google Analytics for statistics and load videos and maps from YouTube and Google Maps only with your consent.', $html);
+    }
+
+    #[Test]
+    public function the_german_text_for_both_categories_matches_the_approved_wording(): void
+    {
+        $this->withAnalytics();
+        $this->withMedia();
+        $this->useLanguage('de');
+        config(['statamic.consent.services.vimeo' => false]);
+
+        $this->assertSame(
+            'Wir nutzen Google Analytics für Statistiken und laden Videos und Karten von YouTube und Google Maps nur mit Ihrer Einwilligung. Dabei können Daten in die USA übermittelt werden. Ihre Wahl können Sie jederzeit unter „Cookie-Einstellungen“ ändern.',
+            $this->bannerText($this->antlers('{{ consent:banner }}')),
+        );
+    }
+
+    #[Test]
+    public function the_media_text_names_only_what_is_enabled(): void
+    {
+        $this->withMedia();
+        $this->useLanguage('de');
+
+        config(['statamic.consent.services.google_maps' => false, 'statamic.consent.services.vimeo' => false]);
+        $this->assertStringStartsWith('Wir laden Videos von YouTube nur mit Ihrer Einwilligung.', $this->bannerText($this->antlers('{{ consent:banner }}')));
+
+        config(['statamic.consent.services.google_maps' => true, 'statamic.consent.services.youtube' => false]);
+        $this->assertStringStartsWith('Wir laden Karten von Google Maps nur mit Ihrer Einwilligung.', $this->bannerText($this->antlers('{{ consent:banner }}')));
+    }
+
+    #[Test]
+    public function the_banner_text_stays_short(): void
+    {
+        $this->withAnalytics();
+        $this->withMedia();
+
+        foreach (['de', 'en'] as $lang) {
+            $this->useLanguage($lang);
+            $text = $this->bannerText($this->antlers('{{ consent:banner }}'));
+            $this->assertLessThanOrEqual(45, str_word_count($text, 0, 'äöüÄÖÜß„“'), $lang.': '.$text);
+        }
+    }
+
+    #[Test]
+    public function the_position_and_theme_are_passed_to_the_script(): void
+    {
+        $this->withAnalytics();
+
+        $html = $this->antlers('{{ consent:banner }}');
+        $this->assertStringContainsString('data-consent-position="bottom-left"', $html);
+        $this->assertStringContainsString('aria-modal="false"', $html);
+        $this->assertStringContainsString('data-consent-theme="auto"', $html);
+        $this->assertStringContainsString('data-consent-accent-selector=".btn-primary, .button-primary, .btn, .button, button[type=&quot;submit&quot;], main a, a"', $html);
+
+        config(['statamic.consent.position' => 'center', 'statamic.consent.theme' => 'manual']);
+        $html = $this->antlers('{{ consent:banner }}');
+        $this->assertStringContainsString('data-consent-position="center"', $html);
+        $this->assertStringContainsString('aria-modal="true"', $html);
+        $this->assertStringContainsString('data-consent-theme="manual"', $html);
+        $this->assertStringNotContainsString('data-consent-accent-selector', $html);
+
+        foreach (['bottom-center', 'bottom-right', 'bar'] as $position) {
+            config(['statamic.consent.position' => $position]);
+            $this->assertStringContainsString('data-consent-position="'.$position.'"', $this->antlers('{{ consent:banner }}'));
+        }
+
+        config(['statamic.consent.position' => 'top', 'statamic.consent.theme' => 'fancy']);
+        $html = $this->antlers('{{ consent:banner }}');
+        $this->assertStringContainsString('data-consent-position="bottom-left"', $html);
+        $this->assertStringContainsString('data-consent-theme="auto"', $html);
     }
 
     #[Test]
@@ -170,7 +241,7 @@ class TagsTest extends TestCase
         $this->assertStringNotContainsString('<iframe', $this->withoutTemplates($html));
         $this->assertStringContainsString('Einmal laden', $html);
         $this->assertStringContainsString('Immer erlauben', $html);
-        $this->assertStringContainsString('von YouTube eingebunden', $html);
+        $this->assertStringContainsString('Beim Laden werden Daten wie Ihre IP-Adresse an YouTube (Google) übertragen, auch in die USA.', $html);
         $this->assertStringContainsString('style="--consent-gate-ratio: 16 / 9"', $html);
         $this->assertStringContainsString('href="/privacy"', $html);
     }
@@ -246,7 +317,7 @@ class TagsTest extends TestCase
     {
         $html = $this->antlers('{{ consent:gate service="calendly" provider="Calendly" }}<iframe src="https://calendly.com/x"></iframe></template><iframe src="https://evil.test"></iframe>{{ /consent:gate }}');
 
-        $this->assertStringContainsString('Hier wird ein Inhalt von Calendly eingebunden', $this->antlersDe($html));
+        $this->assertStringContainsString('Beim Laden werden Daten wie Ihre IP-Adresse an Calendly übertragen.', $this->antlersDe($html));
         $this->assertSame(1, substr_count($html, '</template>'));
         $this->assertStringNotContainsString('<iframe', $this->withoutTemplates($html));
 
@@ -281,8 +352,10 @@ class TagsTest extends TestCase
 
         $html = $this->antlers('{{ consent:banner }}{{ consent:settings_link }}');
 
-        $this->assertStringContainsString('Accept all', $html);
-        $this->assertStringContainsString('Only necessary', $html);
+        $this->assertStringContainsString('>Accept all</button>', $html);
+        $this->assertStringContainsString('>Reject all</button>', $html);
+        $this->assertStringContainsString('>Settings</button>', $html);
+        $this->assertStringContainsString('We use Google Analytics for statistics only with your consent. Data may be transferred to the USA. You can change your choice at any time under &quot;Cookie settings&quot;.', $html);
         $this->assertStringContainsString('Cookie settings', $html);
     }
 
@@ -299,6 +372,21 @@ class TagsTest extends TestCase
             }
             $this->assertDoesNotMatchRegularExpression('/[\x{2013}\x{2014}]/u', $text);
         }
+    }
+
+    /** Plain text of the banner paragraph, without the privacy link. */
+    private function bannerText(string $html): string
+    {
+        preg_match('#<p id="consent-text"[^>]*>(.*?)<a #s', $html, $match);
+
+        return trim(preg_replace('/\s+/', ' ', html_entity_decode($match[1] ?? '', ENT_QUOTES | ENT_HTML5)));
+    }
+
+    private function settingsView(string $html): string
+    {
+        preg_match('#<form[^>]*data-consent-form.*?</form>#s', $html, $match);
+
+        return $match[0] ?? '';
     }
 
     private function antlersDe(string $html): string

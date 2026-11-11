@@ -56,19 +56,12 @@ class Consent extends Tags
         $categories = $settings->categories();
         $services = $this->serviceNames($settings);
 
-        $text = array_filter([
-            $this->trans('banner.intro'),
-            in_array('statistics', $categories, true)
-                ? $this->trans($settings->googleSignals() ? 'banner.statistics_signals' : 'banner.statistics')
-                : null,
-            in_array('media', $categories, true) ? $this->trans('banner.media', ['services' => $services]) : null,
-            $this->trans('banner.outro', ['settings' => $this->trans('banner.settings_link')]),
-        ]);
+        $text = $this->bannerText($settings, $categories, $services);
 
         $html = view('statamic-consent::banner', [
             'settings' => $settings,
             'categories' => $categories,
-            'text' => implode(' ', $text),
+            'text' => $text,
             'privacyUrl' => $settings->privacyUrl(),
             'services' => $services,
             't' => fn (string $key, array $replace = []) => $this->trans($key, $replace),
@@ -246,6 +239,40 @@ class Consent extends Tags
             'css' => $settings->assetUrl('consent.css'),
             'js' => $settings->assetUrl('consent.js'),
         ])->render();
+    }
+
+    /**
+     * Short banner text, built from parts so it fits the categories and
+     * services in use, e.g. "Wir nutzen Google Analytics für Statistiken und
+     * laden Videos und Karten von YouTube und Google Maps nur mit Ihrer
+     * Einwilligung. Dabei können Daten in die USA übermittelt werden. ..."
+     */
+    private function bannerText(Settings $settings, array $categories, string $services): string
+    {
+        $statistics = in_array('statistics', $categories, true);
+        $media = in_array('media', $categories, true);
+
+        $enabled = $settings->enabledServices();
+        $videos = array_intersect(['youtube', 'vimeo'], $enabled) !== [];
+        $maps = in_array('google_maps', $enabled, true);
+        $things = $this->trans('banner.things_'.($videos && $maps ? 'videos_maps' : ($videos ? 'videos' : 'maps')));
+
+        $replace = [
+            'statistics' => $this->trans('banner.statistics_part'),
+            'media' => $this->trans('banner.media_part', ['things' => $things, 'services' => $services]),
+        ];
+
+        $first = match (true) {
+            $statistics && $media => $this->trans('banner.text_both', $replace),
+            $statistics => $this->trans('banner.text_statistics', $replace),
+            default => $this->trans('banner.text_media', $replace),
+        };
+
+        return implode(' ', [
+            $first,
+            $this->trans('banner.transfer'),
+            $this->trans('banner.outro', ['settings' => $this->trans('banner.settings_link')]),
+        ]);
     }
 
     private function serviceNames(Settings $settings): string

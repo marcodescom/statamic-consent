@@ -167,6 +167,27 @@ class Settings
         return $value;
     }
 
+    public const POSITIONS = ['bottom-left', 'bottom-center', 'bottom-right', 'center', 'bar'];
+
+    public function position(): string
+    {
+        $position = strtolower(trim((string) ($this->config['position'] ?? 'bottom-left')));
+
+        return in_array($position, self::POSITIONS, true) ? $position : 'bottom-left';
+    }
+
+    public function theme(): string
+    {
+        return ($this->config['theme'] ?? 'auto') === 'manual' ? 'manual' : 'auto';
+    }
+
+    public function themeAccentSelector(): ?string
+    {
+        $selector = trim((string) ($this->config['theme_accent_selector'] ?? ''));
+
+        return $selector === '' ? null : $selector;
+    }
+
     public function assetsEnabled(): bool
     {
         return (bool) ($this->config['assets']['enabled'] ?? true);
