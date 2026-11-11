@@ -28,3 +28,19 @@ describe('dist/consent.js (standalone build)', () => {
         expect(code).toContain('data-consent-gate-loaded')
     })
 })
+
+describe('dist/consent.css', () => {
+    const css = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../../dist/consent.css'), 'utf8')
+
+    it('keeps the settings link colour, font and decoration in @layer base, so site utility classes win', () => {
+        const layered = css.match(/@layer base\s*\{(:where\(\.consent-settings-link\)\s*\{[^}]*\})\s*\}/)
+        expect(layered).not.toBeNull()
+        expect(layered[1]).toContain('.consent-settings-link')
+        expect(layered[1]).toMatch(/color:\s*inherit/)
+        // Outside the layer the link rule must not set colour (unlayered beats every utility).
+        const unlayered = css.replace(layered[0], '')
+        const rule = unlayered.match(/:where\(\.consent-settings-link\)\s*\{([^}]*)\}/)
+        expect(rule).not.toBeNull()
+        expect(rule[1]).not.toMatch(/(^|\s|;)color:/)
+    })
+})

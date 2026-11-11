@@ -355,19 +355,27 @@
     }
 }
 
-/* Footer button looks like the neighbouring links. :where() keeps the specificity at
-   zero, so classes passed to {{ consent:settings_link class="..." }} (Tailwind etc.) win. */
+/* Footer button looks like the neighbouring links. Unlayered styles always beat
+   layered ones (Tailwind puts its utilities in @layer utilities), so the parts a site
+   wants to change with {{ consent:settings_link class="..." }} (colour, font,
+   decoration, spacing) sit in @layer base, below any utility and below unlayered
+   site CSS. Only the button chrome is removed unlayered, with zero specificity. */
 :where(.consent-settings-link) {
-    display: inline;
-    margin: 0;
-    padding: 0;
     border: 0;
     background: none;
-    color: inherit;
-    font: inherit;
-    text-align: inherit;
-    text-decoration: inherit;
     cursor: pointer;
+}
+
+@layer base {
+    :where(.consent-settings-link) {
+        display: inline;
+        margin: 0;
+        padding: 0;
+        color: inherit;
+        font: inherit;
+        text-align: inherit;
+        text-decoration: inherit;
+    }
 }
 
 @media (prefers-reduced-motion: no-preference) {
