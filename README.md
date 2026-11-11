@@ -7,7 +7,9 @@ Cookie banner, Google Analytics 4 with Google Consent Mode v2 (strict opt-in) an
 - **Gates.** Embeds sit inside `<template>` until consent: nothing is requested from Google, YouTube or Vimeo before (no thumbnails from their CDNs either). "Einmal laden" loads one embed without storing anything, "Immer erlauben" stores the media consent and opens every gate on the page. Withdrawing consent puts the placeholders back.
 - **No cookie of its own.** The choice lives in `localStorage` with version, decision time and the categories asked. It expires after 12 months, on a version change, or when its time lies more than 24 hours in the future. A category added later is asked on its own.
 - **Static caching friendly.** The HTML is the same for every visitor; the banner starts hidden and the script shows it.
-- **Accessible and fair.** `role="dialog"`, labelled, keyboard operable, focus moves in when opened from the footer and returns afterwards, Escape closes only once a choice exists. "Alle akzeptieren" and "Nur notwendige" look exactly the same.
+- **Short and fair.** Two to three short sentences in the banner, details in the settings view. Three buttons in the first view: "Alle akzeptieren" and "Alle ablehnen" look exactly the same, "Einstellungen" is an outline button.
+- **Accessible.** `role="dialog"`, labelled, keyboard operable, focus moves in when opened from the footer and returns afterwards, Escape closes only once a choice exists. The centred variant is a real modal with focus trap.
+- **Fits the site.** Five positions, and colours, accent and radius taken automatically from the site's design (or set by hand).
 - **Standalone.** `dist/consent.js` and `dist/consent.css` also work on plain HTML sites.
 
 Requirements: PHP 8.2+, Laravel 12 or 13, Statamic 6.
@@ -104,13 +106,22 @@ Other links can open the settings too: any element with `data-consent-open`, or 
 | `google_analytics.ad_personalization_signals` | `false` | `allow_ad_personalization_signals` and `ad_personalization` (remarketing). |
 | `google_analytics.cookie_domain` | `'auto'` | Passed to `gtag.js` when set (e.g. `.example.com`) and cleaned up on withdrawal. |
 | `open_hashes` | `['#consent-settings']` | Link targets that open the settings. |
+| `position` | `'bottom-left'` | `bottom-left`, `bottom-center`, `bottom-right`, `bar` (full-width bottom bar) or `center` (modal with dimmed backdrop and focus trap; the page can still scroll). Below 600px every position except `center` is a full-width bottom sheet. |
+| `theme` | `'auto'` | `auto` takes colours from the site (see Theming), `manual` uses only the `--consent-*` variables and the defaults. |
+| `theme_accent_selector` | `'.btn-primary, .button-primary, .btn, .button, button[type="submit"], main a, a'` | Where the auto theme finds the accent colour. Tried in this order, the first visible match wins. |
 | `assets.enabled` / `assets.url` | `true` / `null` | Switch off when the site bundles the files itself, or serve them from another URL. |
 
 Consent Mode signals after "statistics" consent: `analytics_storage` granted; `ad_storage` and `ad_user_data` granted only with Google signals; `ad_personalization` granted only with ad personalisation signals. Without consent (none yet, expired, rejected, withdrawn) the script sets `ga-disable-<id>`, sends `denied` and deletes `_ga`, `_ga_*`, `_gid` and `_gat*` on the host and every parent domain.
 
 ## Texts
 
-German and English ship with the addon (`lang/de`, `lang/en`: `banner.php`, `gate.php`, `services.php`). The language follows the current Statamic site. To change texts:
+German and English ship with the addon (`lang/de`, `lang/en`: `banner.php`, `gate.php`, `services.php`). The language follows the current Statamic site.
+
+The banner text is built from parts, so it stays correct for the categories and services in use: `text_both`, `text_statistics` or `text_media` (with `statistics_part` and `media_part`, which names "Videos", "Karten" or both and only the enabled services), then `transfer` and `outro`. With both categories and YouTube plus Google Maps:
+
+> Wir nutzen Google Analytics für Statistiken und laden Videos und Karten von YouTube und Google Maps nur mit Ihrer Einwilligung. Dabei können Daten in die USA übermittelt werden. Ihre Wahl können Sie jederzeit unter „Cookie-Einstellungen“ ändern.
+
+Details (Google signals: age, gender, interests, cross-device) are in the settings view (`statistics_description_signals`) and the privacy policy. To change texts:
 
 ```bash
 php artisan vendor:publish --tag=statamic-consent-translations
@@ -122,34 +133,44 @@ The markup can be overridden as well (`--tag=statamic-consent-views`, Blade view
 
 ## Theming
 
-Plain CSS with BEM classes (`.consent-banner__*`, `.consent-gate__*`, `.consent-settings-link`) and `font: inherit`. Set the custom properties in the site's CSS:
+Plain CSS with BEM classes (`.consent-banner__*`, `.consent-gate__*`, `.consent-settings-link`, `.consent-backdrop`) and `font: inherit`. Banner, backdrop and gates share one theme. Every colour is resolved in this order:
+
+1. a `--consent-*` variable the site sets (always wins),
+2. the auto theme (`theme: auto`, default),
+3. the built-in default.
+
+**Auto theme.** At start the script reads the site's computed styles: the background from `<body>` (walking up to the first non-transparent background, white if none), the text colour from `<body>`, and accent colour and radius from the first visible element matching `theme_accent_selector` (its background colour, or its text colour when the background is transparent; an accent too close to the page background falls back to the text colour). The button text becomes black or white, whichever contrasts more (always at least WCAG AA 4.5:1). Muted text, borders, hover, category boxes and gate boxes are mixed from background and text colour in CSS (`color-mix`). The values are written as `--consent-auto-*` on `<html>`, never for a variable the site sets itself (and the derived button text, focus colour and button radius are skipped when the site sets the button colour or radius).
+
+**Manual theme**, or overriding single values: set the variables, e.g. on `:root`:
 
 ```css
 :root {
     --consent-bg: #ffffff;
     --consent-fg: #0a0a0a;
-    --consent-muted: #404040;
-    --consent-border: #d4d4d4;
-    --consent-button-bg: #0a0a0a;
-    --consent-button-fg: #ffffff;
-    --consent-button-hover-bg: #262626;
+    --consent-muted: #404040;            /* default: mixed from fg and bg */
+    --consent-border: #d4d4d4;           /* default: mixed from fg and bg */
+    --consent-button-bg: #0a0a0a;        /* default: the text colour */
+    --consent-button-fg: #ffffff;        /* default: the background colour */
+    --consent-button-hover-bg: #262626;  /* default: mixed */
+    --consent-button-radius: 0;          /* default: --consent-radius */
     --consent-focus: #2563eb;
     --consent-radius: 0;
     --consent-shadow: 0 12px 40px rgb(0 0 0 / 0.18);
-    --consent-z: 1000;
-    --consent-category-bg: #f5f5f5;     /* category boxes in the settings view */
-    --consent-accent: #0a0a0a;          /* checkbox colour */
+    --consent-z: 1000;                   /* backdrop; the banner sits one above */
+    --consent-backdrop: rgb(0 0 0 / 0.5);
+    --consent-category-bg: #f5f5f5;      /* category boxes in the settings view */
+    --consent-accent: #0a0a0a;           /* checkbox colour */
     --consent-gate-bg: #f5f5f5;
     --consent-gate-fg: #0a0a0a;
     --consent-gate-muted: #404040;
     --consent-gate-border: #d4d4d4;
     --consent-gate-overlay: rgb(255 255 255 / 0.88); /* text box over a poster */
     --consent-gate-radius: 0;
-    --consent-gate-ratio: 16 / 9;       /* usually set per gate via ratio="" */
+    --consent-gate-ratio: 16 / 9;        /* usually set per gate via ratio="" */
 }
 ```
 
-On phones the banner spans the bottom edge and its buttons stay visible while the text scrolls; from 768px it is a card in the lower left corner.
+On phones (below 600px) the banner is a bottom sheet whose buttons stay visible while the text scrolls; `center` stays a centred dialog.
 
 ## JavaScript API and events
 
@@ -168,14 +189,14 @@ document.addEventListener('consent:ready', (event) => console.log(event.detail))
 
 ## Standalone use (without Statamic)
 
-Copy `dist/consent.css` and `dist/consent.js` to the site and use the markup in [`examples/standalone.html`](examples/standalone.html): the banner `<section data-consent ...>` with its data attributes, gates with `data-consent-gate` and a `<template data-consent-gate-content>`, and a `data-consent-open` button in the footer. The script starts on its own:
+Copy `dist/consent.css` and `dist/consent.js` to the site and use the markup in [`examples/standalone.html`](examples/standalone.html) (open it through a local web server; `?position=center`, `?design=dark` or `?design=light` and `?settings` switch the demo): the banner `<section data-consent ...>` with its data attributes, gates with `data-consent-gate` and a `<template data-consent-gate-content>`, and a `data-consent-open` button in the footer. The script starts on its own:
 
 ```html
 <link rel="stylesheet" href="/assets/consent.css">
 <script type="module" src="/assets/consent.js"></script>
 ```
 
-Banner attributes: `data-consent-version`, `data-consent-storage-key`, `data-consent-categories` (`statistics,media`), `data-consent-ga-id`, `data-consent-google-signals`, `data-consent-ad-personalization`, `data-consent-cookie-domain`, `data-consent-legacy-keys` (JSON list), `data-consent-open-hashes` (JSON list), optional `data-consent-max-age-days`.
+Banner attributes: `data-consent-position`, `data-consent-theme` (`auto` or `manual`), `data-consent-accent-selector`, `data-consent-version`, `data-consent-storage-key`, `data-consent-categories` (`statistics,media`), `data-consent-ga-id`, `data-consent-google-signals`, `data-consent-ad-personalization`, `data-consent-cookie-domain`, `data-consent-legacy-keys` (JSON list), `data-consent-open-hashes` (JSON list), optional `data-consent-max-age-days`.
 
 ## Migration from earlier consent implementations
 
@@ -214,6 +235,11 @@ vendor/bin/phpunit # Orchestra Testbench + Statamic AddonTestCase
 
 ### Unreleased
 
+- Short banner text built from parts; details moved to the settings view.
+- Three buttons in the first view: "Alle akzeptieren", "Alle ablehnen", "Einstellungen" (outline).
+- Positions `bottom-left`, `bottom-center`, `bottom-right`, `bar`, `center` (modal with backdrop and focus trap).
+- Auto theme from the site's colours, accent and radius; site variables always win.
+- Proprietary license.
 - Banner with categories `necessary`, `statistics`, `media`, settings view, footer settings link.
 - Google Analytics 4 with Consent Mode v2, strict opt-in, configurable Google signals and ad personalisation signals, cookie clean-up on all parent domains.
 - Consent gates for YouTube (youtube-nocookie.com), Vimeo (Do Not Track), Google Maps (embed URL or address) and arbitrary markup.

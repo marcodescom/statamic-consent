@@ -10,13 +10,36 @@
     -->
     <link rel="stylesheet" href="../dist/consent.css">
     <style>
-        /* Theme: set the custom properties to the site's colours. */
-        :root {
-            --consent-focus: #d97706;
-        }
+        /*
+         * Theme "auto" (default) takes colours, accent and radius from the page.
+         * To set them by hand, define --consent-* variables, e.g.
+         * :root { --consent-button-bg: #d97706; } (these always win).
+         */
         body { margin: 0; padding: 16px; font-family: system-ui, sans-serif; line-height: 1.5; }
         main { max-width: 720px; margin: 0 auto; display: grid; gap: 24px; }
+        .demo-switcher { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px; }
+        .demo-switcher a { padding: 4px 8px; border: 1px solid currentColor; text-decoration: none; color: inherit; }
+
+        /* Two fake site designs to try the auto theme: ?design=dark or ?design=light */
+        html[data-demo-design="dark"] body { background: #141414; color: #ededed; font-family: Georgia, serif; }
+        html[data-demo-design="dark"] .btn-primary { background: #f3952b; color: #141414; border: 0; border-radius: 4px; padding: 10px 18px; font: inherit; font-weight: 700; }
+        html[data-demo-design="light"] body { background: #f4f7fb; color: #1e293b; font-family: "Trebuchet MS", sans-serif; }
+        html[data-demo-design="light"] .btn-primary { background: #2563eb; color: #fff; border: 0; border-radius: 999px; padding: 10px 22px; font: inherit; font-weight: 600; }
+        html:not([data-demo-design]) .btn-primary { display: none; }
     </style>
+    <script>
+        // Demo only: ?position=..., ?design=dark|light, ?settings opens the settings view,
+        // ?reset clears the stored choice.
+        (function () {
+            var params = new URLSearchParams(location.search)
+            if (params.has('design')) document.documentElement.setAttribute('data-demo-design', params.get('design'))
+            if (params.has('reset')) { try { localStorage.removeItem('consent') } catch (e) {} }
+            window.__demoPosition = params.get('position')
+            if (params.has('settings')) {
+                document.addEventListener('consent:ready', function () { window.Consent.open() })
+            }
+        })()
+    </script>
     <!-- Optional: Consent Mode defaults as early as possible (only with Google Analytics). -->
     <script>window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){window.dataLayer.push(arguments)};gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied'});gtag('set','ads_data_redaction',true);window.__consentDefaults=true;</script>
     <script type="module" src="../dist/consent.js"></script>
@@ -25,11 +48,26 @@
 <main>
     <h1>Consent standalone example</h1>
 
+    <p>Eine Beispielseite mit Video und Karte. <button type="button" class="btn-primary">Jetzt anfragen</button></p>
+
+    <!-- Demo only: switch the banner position (reloads the page and clears the choice). -->
+    <nav class="demo-switcher" aria-label="Position">
+        Position:
+        <a href="?position=bottom-left&amp;reset">bottom-left</a>
+        <a href="?position=bottom-center&amp;reset">bottom-center</a>
+        <a href="?position=bottom-right&amp;reset">bottom-right</a>
+        <a href="?position=center&amp;reset">center</a>
+        <a href="?position=bar&amp;reset">bar</a>
+        Design:
+        <a href="?design=dark&amp;reset">dark</a>
+        <a href="?design=light&amp;reset">light</a>
+    </nav>
+
     <!-- Gate: the iframe sits in <template> and is only inserted after consent. -->
     <div class="consent-gate consent-gate--ratio" data-consent-gate="youtube" data-consent-gate-category="media" data-consent-gate-autoplay="autoplay=1" style="--consent-gate-ratio: 16 / 9">
         <div class="consent-gate__placeholder" data-consent-gate-placeholder>
             <p class="consent-gate__text" id="gate-1-text">
-                Hier wird ein Video von YouTube eingebunden. Beim Laden werden Daten wie Ihre IP-Adresse an Google übertragen, auch in die USA.
+                Beim Laden werden Daten wie Ihre IP-Adresse an YouTube (Google) übertragen, auch in die USA.
                 <a href="/datenschutz" class="consent-gate__link">Datenschutzerklärung</a>
             </p>
             <div class="consent-gate__actions">
@@ -43,7 +81,7 @@
     <div class="consent-gate consent-gate--ratio" data-consent-gate="google_maps" data-consent-gate-category="media" style="--consent-gate-ratio: 4 / 3">
         <div class="consent-gate__placeholder" data-consent-gate-placeholder>
             <p class="consent-gate__text" id="gate-2-text">
-                Hier wird eine Karte von Google Maps eingebunden. Beim Laden werden Daten wie Ihre IP-Adresse an Google übertragen, auch in die USA.
+                Beim Laden werden Daten wie Ihre IP-Adresse an Google Maps (Google) übertragen, auch in die USA.
                 <a href="/datenschutz" class="consent-gate__link">Datenschutzerklärung</a>
             </p>
             <div class="consent-gate__actions">
@@ -61,10 +99,17 @@
     </footer>
 </main>
 
-<!-- Banner: once per page. Leave out data-consent-ga-id and "statistics" without Google Analytics. -->
+<!--
+    Banner: once per page. Leave out data-consent-ga-id and "statistics" without Google Analytics.
+    data-consent-position: bottom-left | bottom-center | bottom-right | bar | center (modal; set aria-modal="true")
+    data-consent-theme: auto | manual, data-consent-accent-selector: where the accent colour comes from.
+-->
 <section
     class="consent-banner"
     data-consent
+    data-consent-position="bottom-left"
+    data-consent-theme="auto"
+    data-consent-accent-selector=".btn-primary, .button-primary, .btn, .button, button[type=&quot;submit&quot;], main a, a"
     data-consent-version="1"
     data-consent-storage-key="consent"
     data-consent-categories="statistics,media"
@@ -80,9 +125,10 @@
     hidden
 >
     <div class="consent-banner__inner">
+        <div class="consent-banner__body">
         <h2 id="consent-title" class="consent-banner__title">Datenschutz-Einstellungen</h2>
         <p id="consent-text" class="consent-banner__text">
-            Wir verwenden technisch notwendige Speicher, damit diese Website funktioniert. Mit Ihrer Einwilligung nutzen wir Google Analytics mit Google-Signalen. So sehen wir, wie unsere Seiten genutzt werden, und erhalten zusammengefasste Angaben zu Alter, Geschlecht und Interessen. Sind Sie bei Google angemeldet, kann Google Ihre Besuche geräteübergreifend erkennen. Google setzt dafür Cookies, Daten können in die USA übermittelt werden. Inhalte von YouTube und Google Maps laden wir nur mit Ihrer Einwilligung. Dabei werden Daten wie Ihre IP-Adresse an den Anbieter übertragen, auch in die USA. Ohne Einwilligung wird nichts davon geladen. Ihre Wahl können Sie jederzeit unter „Cookie-Einstellungen“ am Seitenende ändern.
+            Wir nutzen Google Analytics für Statistiken und laden Videos und Karten von YouTube und Google Maps nur mit Ihrer Einwilligung. Dabei können Daten in die USA übermittelt werden. Ihre Wahl können Sie jederzeit unter „Cookie-Einstellungen“ ändern.
             <a href="/datenschutz" class="consent-banner__link">Mehr in der Datenschutzerklärung</a>.
         </p>
         <form class="consent-banner__settings" id="consent-settings" data-consent-form hidden>
@@ -96,7 +142,7 @@
                 <div class="consent-banner__category">
                     <input type="checkbox" id="consent-statistics" name="statistics" class="consent-banner__checkbox" aria-describedby="consent-statistics-description">
                     <label for="consent-statistics" class="consent-banner__label">Statistik</label>
-                    <p id="consent-statistics-description" class="consent-banner__description">Google Analytics der Google Ireland Limited: Auswertung der Seitennutzung, Cookies „_ga“ und „_ga_*“. Daten können in die USA übermittelt werden.</p>
+                    <p id="consent-statistics-description" class="consent-banner__description">Google Analytics der Google Ireland Limited mit Google-Signalen: Auswertung der Seitennutzung mit zusammengefassten Angaben zu Alter, Geschlecht und Interessen. Sind Sie bei Google angemeldet, kann Google Ihre Besuche geräteübergreifend erkennen. Cookies „_ga“ und „_ga_*“, Daten können in die USA übermittelt werden.</p>
                 </div>
                 <div class="consent-banner__category">
                     <input type="checkbox" id="consent-media" name="media" class="consent-banner__checkbox" aria-describedby="consent-media-description">
@@ -105,13 +151,22 @@
                 </div>
             </fieldset>
         </form>
+        </div>
         <div class="consent-banner__actions">
             <button type="button" class="consent-banner__button" data-consent-accept>Alle akzeptieren</button>
-            <button type="button" class="consent-banner__button" data-consent-reject>Nur notwendige</button>
-            <button type="button" class="consent-banner__button consent-banner__button--secondary" data-consent-customize aria-expanded="false" aria-controls="consent-settings">Einstellungen</button>
-            <button type="button" class="consent-banner__button consent-banner__button--wide" data-consent-save hidden>Auswahl speichern</button>
+            <button type="button" class="consent-banner__button" data-consent-reject>Alle ablehnen</button>
+            <button type="button" class="consent-banner__button consent-banner__button--outline" data-consent-customize aria-expanded="false" aria-controls="consent-settings">Einstellungen</button>
+            <button type="button" class="consent-banner__button consent-banner__button--outline" data-consent-save hidden>Auswahl speichern</button>
         </div>
     </div>
 </section>
+<script>
+    // Demo only: apply ?position=... before consent.js starts (module scripts run after parsing).
+    if (window.__demoPosition) {
+        var demoBanner = document.querySelector('[data-consent]')
+        demoBanner.setAttribute('data-consent-position', window.__demoPosition)
+        demoBanner.setAttribute('aria-modal', window.__demoPosition === 'center' ? 'true' : 'false')
+    }
+</script>
 </body>
 </html>
