@@ -355,8 +355,9 @@
     }
 }
 
-/* Footer button looks like the neighbouring links. */
-.consent-settings-link {
+/* Footer button looks like the neighbouring links. :where() keeps the specificity at
+   zero, so classes passed to {{ consent:settings_link class="..." }} (Tailwind etc.) win. */
+:where(.consent-settings-link) {
     display: inline;
     margin: 0;
     padding: 0;

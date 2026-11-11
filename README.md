@@ -44,7 +44,7 @@ Set the measurement id in `.env` (optional; without it there is no statistics ca
 GOOGLE_ANALYTICS_ID=G-XXXXXXXXXX
 ```
 
-Publish the config to adjust it:
+Publish the config to adjust it (it lands in `config/statamic/consent.php`, read as `config('statamic.consent')`):
 
 ```bash
 php artisan vendor:publish --tag=statamic-consent-config
@@ -210,6 +210,8 @@ List the old localStorage keys in `legacy_storage_keys`. On the first visit afte
 | `{ v, ts, analytics?, maps? }` | the categories present |
 
 Expired or unreadable old choices are dropped (the key is still removed). Categories the old implementation never asked about are asked in the banner, with the carried-over answers preselected. When the new storage already holds a valid choice, old keys are only removed.
+
+Keeping the old key as `storage_key` works too: an old record in one of these shapes found under the current key is converted in place, the same way. Raise `version` if the old choices should not count.
 
 ## Privacy policy template
 

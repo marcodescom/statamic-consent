@@ -259,11 +259,31 @@ export function convertLegacy(raw) {
  * old choice still expires on schedule.
  */
 export function migrateLegacy(win, options, now = Date.now()) {
-    if (! options.legacyKeys.length) {
-        return null
-    }
     let migrated = null
     const current = readState(win, options, now)
+
+    // A site that had its own banner under the same key (storage_key = the old key): the
+    // old record is not a valid current state, so convert it in place, like a legacy key.
+    if (! current) {
+        const raw = getItem(win, options.storageKey)
+        if (raw !== null) {
+            const legacy = convertLegacy(raw)
+            if (legacy && isFresh(Date.parse(legacy.decidedAt), now, options.maxAgeDays)) {
+                migrated = {
+                    version: options.version,
+                    decidedAt: new Date(Date.parse(legacy.decidedAt)).toISOString(),
+                    asked: legacy.asked,
+                    statistics: legacy.statistics,
+                    media: legacy.media,
+                }
+                writeState(win, options, migrated)
+            }
+        }
+    }
+
+    if (! options.legacyKeys.length) {
+        return migrated
+    }
 
     options.legacyKeys.forEach((key) => {
         if (key === options.storageKey) {

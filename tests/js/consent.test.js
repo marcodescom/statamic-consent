@@ -217,6 +217,20 @@ describe('legacy migration', () => {
         expect(convertLegacy('garbage')).toBeNull()
     })
 
+    it('converts an old record found under the current key in place', () => {
+        const decidedAt = new Date(Date.now() - 2 * DAY).toISOString()
+        store({ version: '2026-11', analytics: true, decidedAt })
+        const api = setup(bannerHtml())
+        expect(stored()).toMatchObject({ version: '1', asked: ['statistics'], statistics: true, media: false, decidedAt })
+        expect(api.has('statistics')).toBe(true)
+    })
+
+    it('asks again when the old record under the current key has expired', () => {
+        store({ version: '2026-11', analytics: true, decidedAt: new Date(Date.now() - 400 * DAY).toISOString() })
+        setup(bannerHtml())
+        expect(banner().hidden).toBe(false)
+    })
+
     it('leaves legacy keys alone when none are configured', () => {
         store({ version: 'x', analytics: true, decidedAt: new Date().toISOString() }, 'old_consent')
         setup(bannerHtml())
