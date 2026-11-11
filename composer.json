@@ -1,0 +1,56 @@
+{
+    "name": "marcodes/statamic-consent",
+    "description": "Cookie banner, Google Analytics 4 with Google Consent Mode v2 (strict opt-in) and two-click consent gates for YouTube, Vimeo and Google Maps.",
+    "type": "statamic-addon",
+    "keywords": [
+        "statamic",
+        "addon",
+        "consent",
+        "cookie banner",
+        "gdpr",
+        "google analytics",
+        "consent mode"
+    ],
+    "authors": [
+        {
+            "name": "MARCODES GmbH",
+            "homepage": "https://www.marcodes.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^12.0 || ^13.0",
+        "statamic/cms": "^6.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0 || ^11.0",
+        "phpunit/phpunit": "^11.5 || ^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Marcodes\\Consent\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Marcodes\\Consent\\Tests\\": "tests/php"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "extra": {
+        "statamic": {
+            "name": "Consent",
+            "description": "Cookie banner, GA4 with Consent Mode v2 and consent gates for embeds."
+        },
+        "laravel": {
+            "providers": [
+                "Marcodes\\Consent\\ServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
