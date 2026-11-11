@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Consent standalone example</title>
+    <!--
+        Standalone use without Statamic: copy dist/consent.css and dist/consent.js
+        to the site and adapt the data attributes and texts below.
+    -->
+    <link rel="stylesheet" href="../dist/consent.css">
+    <style>
+        /* Theme: set the custom properties to the site's colours. */
+        :root {
+            --consent-focus: #d97706;
+        }
+        body { margin: 0; padding: 16px; font-family: system-ui, sans-serif; line-height: 1.5; }
+        main { max-width: 720px; margin: 0 auto; display: grid; gap: 24px; }
+    </style>
+    <!-- Optional: Consent Mode defaults as early as possible (only with Google Analytics). -->
+    <script>window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){window.dataLayer.push(arguments)};gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied'});gtag('set','ads_data_redaction',true);window.__consentDefaults=true;</script>
+    <script type="module" src="../dist/consent.js"></script>
+</head>
+<body>
+<main>
+    <h1>Consent standalone example</h1>
+
+    <!-- Gate: the iframe sits in <template> and is only inserted after consent. -->
+    <div class="consent-gate consent-gate--ratio" data-consent-gate="youtube" data-consent-gate-category="media" data-consent-gate-autoplay="autoplay=1" style="--consent-gate-ratio: 16 / 9">
+        <div class="consent-gate__placeholder" data-consent-gate-placeholder>
+            <p class="consent-gate__text" id="gate-1-text">
+                Hier wird ein Video von YouTube eingebunden. Beim Laden werden Daten wie Ihre IP-Adresse an Google übertragen, auch in die USA.
+                <a href="/datenschutz" class="consent-gate__link">Datenschutzerklärung</a>
+            </p>
+            <div class="consent-gate__actions">
+                <button type="button" class="consent-gate__button" data-consent-gate-load aria-describedby="gate-1-text">Einmal laden</button>
+                <button type="button" class="consent-gate__button" data-consent-gate-allow aria-describedby="gate-1-text">Immer erlauben</button>
+            </div>
+        </div>
+        <template data-consent-gate-content><iframe src="https://www.youtube-nocookie.com/embed/aqz-KE-bpKQ?rel=0" title="YouTube-Video" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></template>
+    </div>
+
+    <div class="consent-gate consent-gate--ratio" data-consent-gate="google_maps" data-consent-gate-category="media" style="--consent-gate-ratio: 4 / 3">
+        <div class="consent-gate__placeholder" data-consent-gate-placeholder>
+            <p class="consent-gate__text" id="gate-2-text">
+                Hier wird eine Karte von Google Maps eingebunden. Beim Laden werden Daten wie Ihre IP-Adresse an Google übertragen, auch in die USA.
+                <a href="/datenschutz" class="consent-gate__link">Datenschutzerklärung</a>
+            </p>
+            <div class="consent-gate__actions">
+                <button type="button" class="consent-gate__button" data-consent-gate-load aria-describedby="gate-2-text">Einmal laden</button>
+                <button type="button" class="consent-gate__button" data-consent-gate-allow aria-describedby="gate-2-text">Immer erlauben</button>
+            </div>
+        </div>
+        <template data-consent-gate-content><iframe src="https://www.google.com/maps?q=Marienplatz+1%2C+M%C3%BCnchen&amp;output=embed" title="Karte von Google Maps" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></template>
+    </div>
+
+    <footer>
+        <a href="/impressum">Impressum</a> &middot;
+        <a href="/datenschutz">Datenschutz</a> &middot;
+        <button type="button" class="consent-settings-link" data-consent-open aria-haspopup="dialog">Cookie-Einstellungen</button>
+    </footer>
+</main>
+
+<!-- Banner: once per page. Leave out data-consent-ga-id and "statistics" without Google Analytics. -->
+<section
+    class="consent-banner"
+    data-consent
+    data-consent-version="1"
+    data-consent-storage-key="consent"
+    data-consent-categories="statistics,media"
+    data-consent-ga-id="G-XXXXXXXXXX"
+    data-consent-google-signals="true"
+    data-consent-ad-personalization="false"
+    data-consent-open-hashes='["#consent-settings"]'
+    role="dialog"
+    aria-modal="false"
+    aria-labelledby="consent-title"
+    aria-describedby="consent-text"
+    tabindex="-1"
+    hidden
+>
+    <div class="consent-banner__inner">
+        <h2 id="consent-title" class="consent-banner__title">Datenschutz-Einstellungen</h2>
+        <p id="consent-text" class="consent-banner__text">
+            Wir verwenden technisch notwendige Speicher, damit diese Website funktioniert. Mit Ihrer Einwilligung nutzen wir Google Analytics mit Google-Signalen. So sehen wir, wie unsere Seiten genutzt werden, und erhalten zusammengefasste Angaben zu Alter, Geschlecht und Interessen. Sind Sie bei Google angemeldet, kann Google Ihre Besuche geräteübergreifend erkennen. Google setzt dafür Cookies, Daten können in die USA übermittelt werden. Inhalte von YouTube und Google Maps laden wir nur mit Ihrer Einwilligung. Dabei werden Daten wie Ihre IP-Adresse an den Anbieter übertragen, auch in die USA. Ohne Einwilligung wird nichts davon geladen. Ihre Wahl können Sie jederzeit unter „Cookie-Einstellungen“ am Seitenende ändern.
+            <a href="/datenschutz" class="consent-banner__link">Mehr in der Datenschutzerklärung</a>.
+        </p>
+        <form class="consent-banner__settings" id="consent-settings" data-consent-form hidden>
+            <fieldset class="consent-banner__fieldset">
+                <legend class="consent-banner__legend">Kategorien</legend>
+                <div class="consent-banner__category">
+                    <input type="checkbox" id="consent-necessary" class="consent-banner__checkbox" checked disabled aria-describedby="consent-necessary-description">
+                    <label for="consent-necessary" class="consent-banner__label">Notwendig</label>
+                    <p id="consent-necessary-description" class="consent-banner__description">Speichert Ihre Auswahl in diesem Browser. Immer aktiv.</p>
+                </div>
+                <div class="consent-banner__category">
+                    <input type="checkbox" id="consent-statistics" name="statistics" class="consent-banner__checkbox" aria-describedby="consent-statistics-description">
+                    <label for="consent-statistics" class="consent-banner__label">Statistik</label>
+                    <p id="consent-statistics-description" class="consent-banner__description">Google Analytics der Google Ireland Limited: Auswertung der Seitennutzung, Cookies „_ga“ und „_ga_*“. Daten können in die USA übermittelt werden.</p>
+                </div>
+                <div class="consent-banner__category">
+                    <input type="checkbox" id="consent-media" name="media" class="consent-banner__checkbox" aria-describedby="consent-media-description">
+                    <label for="consent-media" class="consent-banner__label">Externe Medien</label>
+                    <p id="consent-media-description" class="consent-banner__description">Lädt eingebettete Inhalte von YouTube und Google Maps. Dabei wird unter anderem Ihre IP-Adresse an den Anbieter übertragen, auch in die USA.</p>
+                </div>
+            </fieldset>
+        </form>
+        <div class="consent-banner__actions">
+            <button type="button" class="consent-banner__button" data-consent-accept>Alle akzeptieren</button>
+            <button type="button" class="consent-banner__button" data-consent-reject>Nur notwendige</button>
+            <button type="button" class="consent-banner__button consent-banner__button--secondary" data-consent-customize aria-expanded="false" aria-controls="consent-settings">Einstellungen</button>
+            <button type="button" class="consent-banner__button consent-banner__button--wide" data-consent-save hidden>Auswahl speichern</button>
+        </div>
+    </div>
+</section>
+</body>
+</html>
